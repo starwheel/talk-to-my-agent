@@ -19,7 +19,11 @@ class Settings(BaseSettings):
     akool_session_duration_minutes: int = 10
 
     # Database (Supabase/Postgres)
-    database_url: str = ""
+    db_url: str = ""
+    db_user: str = ""
+    db_password: str = ""
+    db_name: str = "postgres"
+    db_port: int = 5432
 
     # Gemini (Vertex AI with API key)
     gemini_api_key: str = ""

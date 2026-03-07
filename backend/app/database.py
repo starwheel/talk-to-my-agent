@@ -15,12 +15,22 @@ _pool: Optional[asyncpg.Pool] = None
 async def init_db() -> None:
     """Initialize connection pool and create tables if needed."""
     global _pool
-    if not settings.database_url:
-        logger.warning("DATABASE_URL not set — transcript storage disabled")
+    if not settings.db_url or not settings.db_user:
+        logger.warning("DB_URL/DB_USER not set — transcript storage disabled")
         return
 
     try:
-        _pool = await asyncpg.create_pool(settings.database_url, min_size=1, max_size=10, timeout=10)
+        _pool = await asyncpg.create_pool(
+            host=settings.db_url,
+            port=settings.db_port,
+            user=settings.db_user,
+            password=settings.db_password,
+            database=settings.db_name,
+            min_size=1,
+            max_size=10,
+            timeout=10,
+            ssl="require",
+        )
 
         async with _pool.acquire() as conn:
             await conn.execute("""

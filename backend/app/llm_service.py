@@ -1,4 +1,4 @@
-"""LLM service — calls Gemini via Generative Language API (API key auth)."""
+"""LLM service — calls Gemini via Vertex AI (API key auth)."""
 
 import json
 from typing import Dict, List
@@ -8,7 +8,7 @@ import httpx
 from .config import settings
 from .models import ConversationMessage
 
-GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+GEMINI_API_BASE = "https://aiplatform.googleapis.com/v1/publishers/google/models"
 
 
 async def get_reply(

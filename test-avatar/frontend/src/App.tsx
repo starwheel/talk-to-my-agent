@@ -165,6 +165,20 @@ export default function App() {
       client.on('stream-message', (_uid: number, payload: Uint8Array) => {
         const decoded = new TextDecoder().decode(payload);
         console.log('avatar:', decoded);
+
+        try {
+          const msg = JSON.parse(decoded);
+          if (msg.type === 'chat' && msg.pld?.text) {
+            const from = msg.pld.from;
+            if (from === 'user') {
+              addMessage('user', msg.pld.text);
+            } else if (from === 'bot' && msg.pld.text.trim()) {
+              addMessage('ai', msg.pld.text);
+            }
+          }
+        } catch {
+          // not JSON or unexpected format — ignore
+        }
       });
 
       await client.join(session.agora.appId, session.agora.channel, session.agora.token, session.agora.uid);
@@ -329,6 +343,17 @@ export default function App() {
           </button>
         </div>
       </div>
+
+      {/* Loading overlay while generating summary */}
+      {isEnding && (
+        <div className="summary-overlay">
+          <div className="loading-popup">
+            <div className="loading-spinner" />
+            <h2>Generating Summary</h2>
+            <p className="loading-hint">Analyzing your conversation...</p>
+          </div>
+        </div>
+      )}
 
       {/* Summary Popup */}
       {showSummary && summaryData && (
