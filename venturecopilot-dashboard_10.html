@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VentureCopilot — Kevin O'Leary Digital Twin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C96A;
+    --gold-dim: #7A6130;
+    --black: #0A0A0A;
+    --surface: #111111;
+    --surface2: #181818;
+    --surface3: #202020;
+    --border: #2A2A2A;
+    --text: #F0EDE6;
+    --text-dim: #7A7570;
+    --text-mid: #B0AAA0;
+    --green: #4CAF7A;
+    --red: #E05A5A;
+    --blue: #4A90D9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+  }
+
+  .logo-area {
+    padding: 28px 24px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .twin-card {
+    margin: 20px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--gold-dim);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .twin-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .twin-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3A2E0A, #6B5520);
+    border: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    position: relative;
+    margin-bottom: 12px;
+  }
+
+  .twin-status-dot {
+    position: absolute;
+    bottom: 2px; right: 2px;
+    width: 10px; height: 10px;
+    background: var(--green);
+    border-radius: 50%;
+    border: 2px solid var(--surface2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.9); }
+  }
+
+  .twin-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .twin-role {
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .twin-mode {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(76, 175, 122, 0.1);
+    border: 1px solid rgba(76, 175, 122, 0.2);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .twin-mode .dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  nav { padding: 8px 12px; flex: 1; }
+
+  .nav-section {
+    margin-bottom: 24px;
+  }
+
+  .nav-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0 12px;
+    margin-bottom: 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 400;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+
+  .nav-item.active {
+    background: rgba(201,168,76,0.12);
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .nav-badge.red { background: var(--red); color: white; }
+
+  /* MAIN */
+  .main {
+    margin-left: 240px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    gap: 20px;
+    background: rgba(10,10,10,0.8);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-gold {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  .btn-gold:hover { background: var(--gold-light); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-mid);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { border-color: var(--gold-dim); color: var(--text); }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(224,90,90,0.12);
+    border: 1px solid rgba(224,90,90,0.25);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--red);
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* CONTENT */
+  .content { padding: 28px 32px; flex: 1; }
+
+  /* GRID */
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--gold-dim); }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .stat-card:hover::after { opacity: 1; }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.green { color: var(--green); }
+
+  .stat-delta {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stat-delta.neg { color: var(--red); }
+
+  .stat-icon {
+    position: absolute;
+    top: 18px; right: 18px;
+    font-size: 22px;
+    opacity: 0.15;
+  }
+
+  /* TWIN ACTIVITY */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .section-subtitle {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  .grid-main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  /* CALL FEED */
+  .call-feed {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .feed-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .call-item {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+
+  .call-item:hover { background: var(--surface2); }
+  .call-item:last-child { border-bottom: none; }
+
+  .call-item.active-call {
+    background: rgba(201,168,76,0.05);
+    border-left: 2px solid var(--gold);
+  }
+
+  .call-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .call-info { flex: 1; min-width: 0; }
+
+  .call-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .call-detail {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .call-meta { text-align: right; flex-shrink: 0; }
+
+  .call-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .call-status {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  .status-live { color: var(--green); }
+  .status-review { color: var(--gold); }
+  .status-done { color: var(--text-dim); }
+  .status-scheduled { color: var(--blue); }
+
+  /* TWIN PANEL */
+  .twin-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .twin-video-area {
+    aspect-ratio: 16/10;
+    background: #080808;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .twin-video-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 30% 40%, rgba(201,168,76,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 60%, rgba(201,168,76,0.04) 0%, transparent 50%);
+  }
+
+  .twin-avatar-large {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2A2000, #6B5520);
+    border: 3px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--gold);
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 0 40px rgba(201,168,76,0.2);
+  }
+
+  .video-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 14px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 3;
+  }
+
+  .video-label {
+    font-size: 11px;
+    color: var(--text-mid);
+  }
+
+  .video-live-badge {
+    background: rgba(224,90,90,0.9);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .waveform {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 20px;
+  }
+
+  .wave-bar {
+    width: 3px;
+    background: var(--gold);
+    border-radius: 2px;
+    animation: wave 0.8s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .wave-bar:nth-child(2) { height: 14px; animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { height: 18px; animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { height: 8px; animation-delay: 0.4s; }
+  .wave-bar:nth-child(6) { height: 16px; animation-delay: 0.15s; }
+  .wave-bar:nth-child(7) { height: 12px; animation-delay: 0.25s; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.3); }
+  }
+
+  .twin-controls {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+
+  .ctrl-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-mid);
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .ctrl-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .ctrl-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  .twin-intel {
+    padding: 16px;
+    flex: 1;
+  }
+
+  .intel-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .intel-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 1.4;
+  }
+
+  .intel-item:last-child { border-bottom: none; }
+
+  .intel-dot {
+    width: 5px; height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  /* TRANSCRIPT */
+  .transcript-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .transcript-body {
+    padding: 20px 22px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .transcript-body::-webkit-scrollbar { width: 4px; }
+  .transcript-body::-webkit-scrollbar-track { background: transparent; }
+  .transcript-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .msg-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .msg-content { flex: 1; }
+
+  .msg-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .msg-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .msg-name.twin { color: var(--gold); }
+
+  .msg-timestamp {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .msg-text {
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.55;
+  }
+
+  /* KNOWLEDGE BASE */
+  .grid-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  .kb-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .kb-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .kb-body { padding: 16px 20px; }
+
+  .kb-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 12px;
+  }
+
+  .kb-stat:last-child { border-bottom: none; }
+
+  .kb-stat-label { color: var(--text-dim); }
+
+  .kb-stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .persona-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text-mid);
+    margin: 3px;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+
+  .persona-tag:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  .persona-tag.active {
+    background: rgba(201,168,76,0.12);
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .deal-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .deal-row:last-child { border-bottom: none; }
+
+  .deal-logo {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'Bebas Neue', sans-serif;
+  }
+
+  .deal-info { flex: 1; min-width: 0; }
+
+  .deal-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .deal-sector {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  .deal-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .deal-stage {
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+    text-align: right;
+  }
+
+  /* RANK BADGES */
+  .rank-badge {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: rgba(201,168,76,0.2); color: var(--gold); border: 1px solid var(--gold-dim); }
+  .rank-2 { background: rgba(201,168,76,0.1); color: var(--gold-dim); border: 1px solid rgba(201,168,76,0.2); }
+  .rank-3 { background: rgba(74,144,217,0.1); color: var(--blue); border: 1px solid rgba(74,144,217,0.2); }
+  .rank-4 { background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid var(--border); }
+  .rank-5 { background: rgba(224,90,90,0.08); color: var(--red); border: 1px solid rgba(224,90,90,0.15); }
+
+  /* PRIORITY SCORE */
+  .priority-score {
+    width: 38px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .score-high { background: rgba(76,175,122,0.15); color: var(--green); border: 1px solid rgba(76,175,122,0.25); }
+  .score-mid  { background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
+  .score-low  { background: rgba(224,90,90,0.1); color: var(--red); border: 1px solid rgba(224,90,90,0.2); }
+
+  /* DEAL TAG */
+  .deal-tag {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+
+  /* DRAWER HISTORY */
+  .history-call-row {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    align-items: flex-start;
+  }
+  .history-call-row:last-child { border-bottom: none; }
+  .history-num {
+    width: 22px; height: 22px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .history-content { flex: 1; }
+  .history-date { font-size: 10px; color: var(--text-dim); margin-bottom: 3px; font-family: 'DM Mono', monospace; }
+  .history-summary { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
+  .history-outcome {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .drawer-stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 12px;
+  }
+  .drawer-stat-row:last-child { border-bottom: none; }
+  .drawer-stat-label { color: var(--text-dim); }
+  .drawer-stat-val { color: var(--text); font-weight: 500; font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* SOURCE CHIPS */
+  .source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .source-chip.connected {
+    border-color: rgba(76,175,122,0.3);
+    background: rgba(76,175,122,0.07);
+    color: var(--text);
+  }
+
+  .source-chip-icon {
+    font-size: 11px;
+    font-weight: 800;
+    width: 16px;
+    text-align: center;
+  }
+
+  .chip-status {
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .chip-status.add {
+    color: var(--gold);
+  }
+
+  .source-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
+  }
+
+  .source-option-cta:hover { border-color: var(--gold-dim); }
+
+  /* INTERVENTION BANNER */
+  .intervention-banner {
+    background: linear-gradient(135deg, #0D0800 0%, #140C00 50%, #0A0A0A 100%);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 14px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(201,168,76,0.06), inset 0 1px 0 rgba(201,168,76,0.1);
+    position: relative;
+  }
+
+  .intervention-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent);
+  }
+
+  .intervention-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(201,168,76,0.04);
+  }
+
+  .intervention-pulse {
+    position: relative;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .intervention-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    animation: ringPulse 1.8s ease-out infinite;
+  }
+
+  @keyframes ringPulse {
+    0% { transform: scale(0.6); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+
+  .intervention-dot {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    position: relative; z-index: 1;
+  }
+
+  .intervention-items {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .intervention-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 13px 14px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .intervention-item:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+  }
+
+  .urgency-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--red);
+    border-radius: 2px 0 0 2px;
+  }
+
+  .intervention-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    padding-left: 4px;
+  }
+
+  .intervention-content { flex: 1; min-width: 0; }
+
+  .intervention-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .urgency-tag {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .urgency-tag.urgent  { background: rgba(224,90,90,0.2);  color: var(--red);  border: 1px solid rgba(224,90,90,0.3); }
+  .urgency-tag.action  { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.25); }
+  .urgency-tag.monitor { background: rgba(74,144,217,0.12); color: var(--blue); border: 1px solid rgba(74,144,217,0.22); }
+
+  .intervention-desc {
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 1.55;
+    margin-bottom: 7px;
+  }
+
+  .intervention-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 10px;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+  }
+
+  .intervention-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .call-item.selected-row {
+    background: rgba(201,168,76,0.06);
+    border-left: 2px solid var(--gold-dim);
+  }
+
+  /* NAV SUBITEM */
+  .nav-subitem {
+    padding-left: 32px !important;
+    font-size: 12px !important;
+    color: var(--text-dim) !important;
+    animation: fadeUp 0.2s ease both;
+  }
+  .nav-subitem:hover { color: var(--text) !important; }
+
+  /* QUEUE TABS */
+  .queue-tab {
+    flex: 1;
+    text-align: center;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .queue-tab:hover { color: var(--text); }
+  .queue-tab.active-tab {
+    background: var(--surface);
+    color: var(--gold);
+    border: 1px solid var(--border);
+  }
+
+  /* Entrance animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-card { animation: fadeUp 0.4s ease both; }
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stat-card:nth-child(4) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-mark">VENTURE<br>COPILOT</div>
+    <div class="logo-sub">Digital Twin Platform</div>
+  </div>
+
+  <div class="twin-card">
+    <div class="twin-avatar">
+      KO
+      <div class="twin-status-dot"></div>
+    </div>
+    <div class="twin-name">Kevin O'Leary</div>
+    <div class="twin-role">Your Digital Twin</div>
+    <div class="twin-mode">
+      <div class="dot"></div>
+      Twin is taking calls
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+        <span class="nav-icon">⬡</span> Dashboard
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Twin Settings</div>
+      <div class="nav-item">
+        <span class="nav-icon">🧠</span> Knowledge Base
+      </div>
+      <!-- PERSONA EDITOR — expandable -->
+      <div class="nav-item" onclick="togglePersonaMenu(this)" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="nav-icon">🎭</span> Persona Editor
+        </div>
+        <span id="persona-toggle-icon" style="font-size:14px;color:var(--text-dim);transition:transform 0.2s;">+</span>
+      </div>
+      <div id="persona-submenu" style="display:none;overflow:hidden;">
+        <div class="nav-item nav-subitem">
+          <span class="nav-icon">🪞</span> Twin Persona
+        </div>
+        <div class="nav-item nav-subitem">
+          <span class="nav-icon">🔊</span> Voice Clone
+        </div>
+        <div class="nav-item nav-subitem">
+          <span class="nav-icon">🎬</span> Video Model
+        </div>
+        <div class="nav-item nav-subitem" onclick="showPage('train')">
+          <span class="nav-icon">🏋️</span> Train Twin
+        </div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Deals</div>
+      <div class="nav-item">
+        <span class="nav-icon">💼</span> Pipeline
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">📊</span> Analytics
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚙️</span> Settings
+      </div>
+    </div>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar" id="topbar-dashboard">
+    <div class="page-title">Dashboard</div>
+    <div style="font-size:12px;color:var(--text-dim);">Sat, Mar 7, 2026</div>
+    <div class="topbar-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        1 CALL LIVE
+      </div>
+      <button class="btn btn-ghost">🌐 View Public Website</button>
+    </div>
+  </div>
+
+  <div id="page-dashboard">
+  <div class="content">
+
+    <!-- KEVIN ACTION REQUIRED BANNER -->
+    <div class="intervention-banner" id="intervention-banner">
+      <div class="intervention-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="intervention-pulse">
+            <div class="intervention-ring"></div>
+            <div class="intervention-dot"></div>
+          </div>
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#fff;">KEVIN — YOUR ATTENTION IS NEEDED</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;margin-top:1px;">3 decisions your twin cannot make without you</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:1px;">LAST UPDATED 2 MIN AGO</div>
+          <div onclick="document.getElementById('intervention-banner').style.display='none'" style="cursor:pointer;color:rgba(255,255,255,0.3);font-size:16px;line-height:1;padding:4px 6px;border-radius:6px;transition:all 0.15s;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">✕</div>
+        </div>
+      </div>
+
+      <div class="intervention-items">
+
+        <!-- ITEM 1 — URGENT -->
+        <div class="intervention-item urgency-high">
+          <div class="urgency-bar"></div>
+          <div class="intervention-icon">⚖️</div>
+          <div class="intervention-content">
+            <div class="intervention-label">
+              <span class="urgency-tag urgent">URGENT</span>
+              Royalty Rate Decision — Priya Kapoor / NexusPay
+            </div>
+            <div class="intervention-desc">Twin has been negotiating at 4% royalty. Priya is pushing back — offering 2.5%. She has another investor meeting Friday. Twin cannot finalize term sheet without your call on the rate.</div>
+            <div class="intervention-meta">
+              <span>Priya Kapoor · NexusPay · Term Sheet Stage · 5 calls</span>
+              <span style="color:var(--red);">⏰ Decision needed before Fri Mar 8</span>
+            </div>
+          </div>
+          <div class="intervention-actions">
+            <button class="btn btn-gold" style="font-size:11px;padding:7px 16px;white-space:nowrap;" onclick="openDrawer('pk')">View Deal →</button>
+          </div>
+        </div>
+
+        <!-- ITEM 2 — ACTION -->
+        <div class="intervention-item urgency-mid">
+          <div class="urgency-bar" style="background:var(--gold);"></div>
+          <div class="intervention-icon">🤝</div>
+          <div class="intervention-content">
+            <div class="intervention-label">
+              <span class="urgency-tag action">ACTION</span>
+              Investor Referral Request — Marcus Lee / OceanTech
+            </div>
+            <div class="intervention-desc">OceanTech is preparing a Series B. Marcus asked twin for introductions to 2 investors in your network. Twin escalated — only you can authorize sharing your contact list.</div>
+            <div class="intervention-meta">
+              <span>Marcus Lee · OceanTech · Portfolio Co. · $5M invested</span>
+              <span style="color:var(--gold);">No hard deadline — but Series B window is now</span>
+            </div>
+          </div>
+          <div class="intervention-actions">
+            <button class="btn btn-ghost" style="font-size:11px;padding:7px 16px;white-space:nowrap;" onclick="openDrawer('ml')">View Deal →</button>
+          </div>
+        </div>
+
+        <!-- ITEM 3 — MONITOR -->
+        <div class="intervention-item urgency-low">
+          <div class="urgency-bar" style="background:var(--blue);"></div>
+          <div class="intervention-icon">👁</div>
+          <div class="intervention-content">
+            <div class="intervention-label">
+              <span class="urgency-tag monitor">MONITOR</span>
+              Live Call Sentiment Shift — Ryan Thompson
+            </div>
+            <div class="intervention-desc">Twin flagged a tone shift at the 28-min mark. Ryan became defensive when pressed on churn. Twin is handling it but confidence dropped to 62%. You may want to take over if it continues.</div>
+            <div class="intervention-meta">
+              <span>Ryan Thompson · CleanCarbon · Live now · 32 min elapsed</span>
+              <span style="color:var(--blue);">Twin confidence: 62% — watch closely</span>
+            </div>
+          </div>
+          <div class="intervention-actions">
+            <button class="btn btn-ghost" style="font-size:11px;padding:7px 16px;white-space:nowrap;border-color:rgba(74,144,217,0.4);color:var(--blue);">✋ Take Over</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="grid-4">
+      <div class="stat-card">
+        <div class="stat-icon">📞</div>
+        <div class="stat-label">Calls Handled by Twin</div>
+        <div class="stat-value gold">247</div>
+        <div class="stat-delta">↑ 18 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱</div>
+        <div class="stat-label">Hours Saved</div>
+        <div class="stat-value">83<span style="font-size:22px;color:var(--text-dim)">h</span></div>
+        <div class="stat-delta">↑ 12h vs last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Deals Advanced</div>
+        <div class="stat-value green">31</div>
+        <div class="stat-delta">↑ 6 this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-label">Twin Accuracy Score</div>
+        <div class="stat-value">96<span style="font-size:22px;color:var(--text-dim)">%</span></div>
+        <div class="stat-delta neg">↓ 2% — needs retraining</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID: queue left, caller detail right -->
+    <div style="display:grid;grid-template-columns:1fr 400px;gap:20px;margin-bottom:24px;align-items:start;">
+
+      <!-- LEFT: CALL FEED -->
+      <div class="call-feed">
+        <div class="feed-header" style="flex-direction:column;gap:10px;align-items:stretch;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="section-title">DEAL PRIORITY QUEUE</div>
+              <div class="section-subtitle">AI-ranked by deal potential · click any row for history</div>
+            </div>
+            <select style="background:var(--surface2);border:1px solid var(--border);color:var(--text-mid);font-size:11px;padding:5px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;">
+              <option>↕ Priority Score</option>
+              <option>↕ Deal Size</option>
+              <option>↕ Recent Activity</option>
+              <option>↕ Stage</option>
+            </select>
+          </div>
+          <!-- TABS -->
+          <div style="display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px;">
+            <div class="queue-tab active-tab" onclick="switchQueueTab(this,'priority')">Priority Queue</div>
+            <div class="queue-tab" onclick="switchQueueTab(this,'callqueue')">
+              Call Queue
+              <span style="background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:4px;">3</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMN HEADERS -->
+        <div style="display:grid;grid-template-columns:30px 38px 1fr 56px 64px 70px;gap:8px;padding:6px 18px;border-bottom:1px solid var(--border);align-items:center;">
+          <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;">#</div>
+          <div></div>
+          <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;">CONTACT / DEAL</div>
+          <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-align:center;">CALLS</div>
+          <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-align:center;">SCORE</div>
+          <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-align:right;">STATUS</div>
+        </div>
+
+        <!-- RANK 1 — LIVE -->
+        <div class="call-item active-call" onclick="openDetail('rt')" style="display:grid;grid-template-columns:30px 38px 1fr 56px 64px 70px;gap:8px;align-items:center;cursor:pointer;">
+          <div class="rank-badge rank-1">1</div>
+          <div class="call-avatar" style="background:rgba(76,175,122,0.15);color:var(--green);width:34px;height:34px;font-size:12px;">RT</div>
+          <div class="call-info">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="call-name">Ryan Thompson</div>
+              <div class="deal-tag" style="background:rgba(76,175,122,0.12);color:var(--green);">CleanTech</div>
+            </div>
+            <div class="call-detail">$4M ask · Series A · Momentum ↑</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-mid);text-align:center;font-family:'DM Mono',monospace;">3</div>
+          <div class="priority-score score-high" style="margin:0 auto;">94</div>
+          <div style="text-align:right;">
+            <div class="call-time">32:14</div>
+            <div class="call-status status-live">● Live</div>
+          </div>
+        </div>
+
+        <!-- RANK 2 -->
+        <div class="call-item" onclick="openDetail('pk')" style="display:grid;grid-template-columns:30px 38px 1fr 56px 64px 70px;gap:8px;align-items:center;cursor:pointer;">
+          <div class="rank-badge rank-2">2</div>
+          <div class="call-avatar" style="background:rgba(201,168,76,0.12);color:var(--gold);width:34px;height:34px;font-size:12px;">PK</div>
+          <div class="call-info">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="call-name">Priya Kapoor</div>
+              <div class="deal-tag" style="background:rgba(201,168,76,0.1);color:var(--gold);">Fintech</div>
+            </div>
+            <div class="call-detail">$12M valuation · Term sheet · Action needed</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-mid);text-align:center;font-family:'DM Mono',monospace;">5</div>
+          <div class="priority-score score-high" style="margin:0 auto;">88</div>
+          <div style="text-align:right;">
+            <div class="call-time">9:42 AM</div>
+            <div class="call-status status-review">⚑ Review</div>
+          </div>
+        </div>
+
+        <!-- RANK 3 -->
+        <div class="call-item" onclick="openDetail('am')" style="display:grid;grid-template-columns:30px 38px 1fr 56px 64px 70px;gap:8px;align-items:center;cursor:pointer;">
+          <div class="rank-badge rank-3">3</div>
+          <div class="call-avatar" style="background:rgba(74,144,217,0.15);color:var(--blue);width:34px;height:34px;font-size:12px;">AM</div>
+          <div class="call-info">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="call-name">Aisha Mohammed</div>
+              <div class="deal-tag" style="background:rgba(74,144,217,0.1);color:var(--blue);">HealthTech</div>
+            </div>
+            <div class="call-detail">Due diligence · Cap table review · Scheduled</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-mid);text-align:center;font-family:'DM Mono',monospace;">4</div>
+          <div class="priority-score score-mid" style="margin:0 auto;">75</div>
+          <div style="text-align:right;">
+            <div class="call-time">11:00 AM</div>
+            <div class="call-status status-scheduled">Scheduled</div>
+          </div>
+        </div>
+
+        <!-- RANK 4 -->
+        <div class="call-item" onclick="openDetail('ml')" style="display:grid;grid-template-columns:30px 38px 1fr 56px 64px 70px;gap:8px;align-items:center;cursor:pointer;">
+          <div class="rank-badge rank-4">4</div>
+          <div class="call-avatar" style="background:rgba(255,255,255,0.06);color:var(--text-mid);width:34px;height:34px;font-size:12px;">ML</div>
+          <div class="call-info">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="call-name">Marcus Lee</div>
+              <div class="deal-tag" style="background:rgba(255,255,255,0.05);color:var(--text-dim);">Marine</div>
+            </div>
+            <div class="call-detail">Portfolio · OceanTech · Q4 revenue +42%</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-mid);text-align:center;font-family:'DM Mono',monospace;">8</div>
+          <div class="priority-score score-mid" style="margin:0 auto;">61</div>
+          <div style="text-align:right;">
+            <div class="call-time">Yesterday</div>
+            <div class="call-status status-done">Done</div>
+          </div>
+        </div>
+
+        <!-- RANK 5 -->
+        <div class="call-item" onclick="openDetail('jc')" style="display:grid;grid-template-columns:30px 38px 1fr 56px 64px 70px;gap:8px;align-items:center;cursor:pointer;">
+          <div class="rank-badge rank-5">5</div>
+          <div class="call-avatar" style="background:rgba(255,255,255,0.04);color:var(--text-dim);width:34px;height:34px;font-size:12px;">JC</div>
+          <div class="call-info">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="call-name">James Chen</div>
+              <div class="deal-tag" style="background:rgba(224,90,90,0.08);color:var(--red);">SaaS</div>
+            </div>
+            <div class="call-detail">Initial intro · Low margin model · Passed</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-mid);text-align:center;font-family:'DM Mono',monospace;">1</div>
+          <div class="priority-score score-low" style="margin:0 auto;">18</div>
+          <div style="text-align:right;">
+            <div class="call-time">Yesterday</div>
+            <div class="call-status status-done">Passed</div>
+          </div>
+        </div>
+
+        <!-- CALL QUEUE TAB CONTENT (hidden by default) -->
+        <div id="callqueue-tab" style="display:none;">
+          <div style="display:grid;grid-template-columns:38px 1fr 80px 80px;gap:8px;padding:6px 18px;border-top:1px solid var(--border);align-items:center;">
+            <div></div>
+            <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;">CONTACT / PURPOSE</div>
+            <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;">TIME</div>
+            <div style="font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-align:right;">ACTION</div>
+          </div>
+          <div class="call-item" style="display:grid;grid-template-columns:38px 1fr 80px 80px;gap:8px;align-items:center;">
+            <div class="call-avatar" style="background:rgba(76,175,122,0.15);color:var(--green);width:34px;height:34px;font-size:12px;">RT</div>
+            <div class="call-info"><div class="call-name">Ryan Thompson</div><div class="call-detail">CleanCarbon · Live now · Call #3</div></div>
+            <div class="call-status status-live" style="font-size:11px;">● Live</div>
+            <div style="text-align:right;"><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">Monitor</button></div>
+          </div>
+          <div class="call-item" style="display:grid;grid-template-columns:38px 1fr 80px 80px;gap:8px;align-items:center;">
+            <div class="call-avatar" style="background:rgba(74,144,217,0.15);color:var(--blue);width:34px;height:34px;font-size:12px;">AM</div>
+            <div class="call-info"><div class="call-name">Aisha Mohammed</div><div class="call-detail">HealthAI · Cap table review</div></div>
+            <div style="font-size:11px;color:var(--blue);">11:00 AM</div>
+            <div style="text-align:right;"><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">Prep</button></div>
+          </div>
+          <div class="call-item" style="display:grid;grid-template-columns:38px 1fr 80px 80px;gap:8px;align-items:center;">
+            <div class="call-avatar" style="background:rgba(201,168,76,0.12);color:var(--gold);width:34px;height:34px;font-size:12px;">SB</div>
+            <div class="call-info"><div class="call-name">Sofia Barros</div><div class="call-detail">AgriTech · Cold inbound pitch</div></div>
+            <div style="font-size:11px;color:var(--text-dim);">2:30 PM</div>
+            <div style="text-align:right;"><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">Assign</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: CALLER DETAIL PANEL -->
+      <div id="detail-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:sticky;top:72px;">
+        <div id="detail-panel-body">
+
+          <!-- DEFAULT: Ryan Thompson (live) -->
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(76,175,122,0.04);display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:38px;height:38px;border-radius:50%;background:rgba(76,175,122,0.15);border:2px solid rgba(76,175,122,0.4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);flex-shrink:0;">RT</div>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;">RYAN THOMPSON</div>
+                  <div style="background:rgba(76,175,122,0.15);border:1px solid rgba(76,175,122,0.3);color:var(--green);font-size:9px;font-weight:700;letter-spacing:1.5px;padding:2px 7px;border-radius:4px;display:flex;align-items:center;gap:4px;"><span style="width:5px;height:5px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</div>
+                </div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">CleanCarbon · Series A · Call #3 · 32:14</div>
+              </div>
+            </div>
+            <div class="priority-score score-high" style="width:36px;height:28px;font-size:13px;">94</div>
+          </div>
+
+          <!-- LIVE VIDEO CALL -->
+          <div style="position:relative;background:#080808;border-bottom:1px solid var(--border);overflow:hidden;">
+            <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 40% 50%, rgba(76,175,122,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(201,168,76,0.05) 0%, transparent 50%);pointer-events:none;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;height:140px;position:relative;z-index:1;">
+              <!-- Twin feed -->
+              <div style="position:relative;border-right:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;">
+                <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2A2000,#6B5520);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);box-shadow:0 0 24px rgba(201,168,76,0.18);">KO</div>
+                <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:14px;">
+                  <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:5px;animation-delay:0s;"></div>
+                  <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:11px;animation-delay:0.1s;"></div>
+                  <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:8px;animation-delay:0.2s;"></div>
+                  <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:14px;animation-delay:0.3s;"></div>
+                  <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:6px;animation-delay:0.4s;"></div>
+                  <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:12px;animation-delay:0.15s;"></div>
+                </div>
+                <div style="position:absolute;top:8px;left:10px;font-size:9px;color:var(--gold);font-weight:600;letter-spacing:1px;opacity:0.8;">TWIN ✦</div>
+              </div>
+              <!-- Caller feed -->
+              <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+                <div style="width:56px;height:56px;border-radius:50%;background:rgba(76,175,122,0.15);border:2px solid rgba(76,175,122,0.5);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);">RT</div>
+                <div style="position:absolute;top:8px;left:10px;font-size:9px;color:var(--text-dim);font-weight:500;letter-spacing:1px;">RYAN T.</div>
+              </div>
+            </div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(0,0,0,0.7));display:flex;align-items:center;justify-content:space-between;z-index:2;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="width:6px;height:6px;background:var(--red);border-radius:50%;display:inline-block;animation:blink 1s infinite;"></span>
+                <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px;">LIVE · 32:14</span>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);font-size:10px;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">👁 Monitor</button>
+                <button style="background:rgba(224,90,90,0.2);border:1px solid rgba(224,90,90,0.3);color:var(--red);font-size:10px;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='rgba(224,90,90,0.35)'" onmouseout="this.style.background='rgba(224,90,90,0.2)'">✋ Take Over</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI SUMMARY -->
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
+            <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">AI Deal Summary</div>
+            <div style="font-size:12px;color:var(--text-mid);line-height:1.55;">Strong early momentum. Founder is responsive and data-driven. Twin flagged churn concern; royalty structure not yet agreed — key sticking point for close.</div>
+          </div>
+
+          <!-- DEAL STATS -->
+          <div style="padding:10px 18px;border-bottom:1px solid var(--border);">
+            <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Deal Stats</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+              <div class="drawer-stat-row" style="font-size:11px;"><div class="drawer-stat-label">Ask</div><div class="drawer-stat-val">$4M</div></div>
+              <div class="drawer-stat-row" style="font-size:11px;"><div class="drawer-stat-label">Valuation</div><div class="drawer-stat-val">$18M</div></div>
+              <div class="drawer-stat-row" style="font-size:11px;"><div class="drawer-stat-label">MRR</div><div class="drawer-stat-val">$47K</div></div>
+              <div class="drawer-stat-row" style="font-size:11px;"><div class="drawer-stat-label">Churn</div><div class="drawer-stat-val" style="color:var(--red);">4.0% ⚠</div></div>
+              <div class="drawer-stat-row" style="font-size:11px;"><div class="drawer-stat-label">Stage</div><div class="drawer-stat-val">Series A</div></div>
+              <div class="drawer-stat-row" style="font-size:11px;"><div class="drawer-stat-label">Trend</div><div class="drawer-stat-val" style="color:var(--green);">↑ Strong</div></div>
+            </div>
+          </div>
+
+          <!-- CALL HISTORY -->
+          <div style="padding:12px 18px;overflow-y:auto;max-height:320px;">
+            <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Call History · 3 Calls</div>
+            <div class="history-call-row" style="padding:8px 0;">
+              <div class="history-num">1</div>
+              <div class="history-content">
+                <div class="history-date">Feb 12 · 24 min</div>
+                <div class="history-summary">Initial pitch. Underprepared on margins.</div>
+                <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;">
+                  <span class="history-outcome" style="background:rgba(201,168,76,0.15);color:var(--gold);">Request deck</span>
+                  <button style="background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-size:10px;padding:2px 8px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.borderColor='var(--gold-dim)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">📄 Transcript</button>
+                </div>
+              </div>
+            </div>
+            <div class="history-call-row" style="padding:8px 0;">
+              <div class="history-num">2</div>
+              <div class="history-content">
+                <div class="history-date">Feb 24 · 31 min</div>
+                <div class="history-summary">MRR confirmed. Churn & royalty raised. Founder pushed back.</div>
+                <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;">
+                  <span class="history-outcome" style="background:rgba(76,175,122,0.12);color:var(--green);">Positive — follow-up</span>
+                  <button style="background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-size:10px;padding:2px 8px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.borderColor='var(--gold-dim)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">📄 Transcript</button>
+                </div>
+              </div>
+            </div>
+            <div class="history-call-row" style="padding:8px 0;border-bottom:none;">
+              <div class="history-num" style="background:rgba(76,175,122,0.15);border-color:rgba(76,175,122,0.3);color:var(--green);">3</div>
+              <div class="history-content">
+                <div class="history-date" style="color:var(--green);">Mar 7 · Live now · 32:14</div>
+                <div class="history-summary">Pressing on profitability & royalty model. Sentiment positive.</div>
+                <div style="display:flex;gap:6px;margin-top:5px;">
+                  <span class="history-outcome" style="background:rgba(76,175,122,0.15);color:var(--green);display:flex;align-items:center;gap:4px;"><span style="width:5px;height:5px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>Live</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- HIDDEN OVERLAY DRAWER (kept for JS compat) -->
+    <div id="drawer-overlay" onclick="closeDrawer()" style="display:none;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,0.3);"></div>
+    <div id="caller-drawer" style="display:none;position:fixed;top:0;right:0;bottom:0;width:420px;background:var(--surface);border-left:1px solid var(--border);z-index:300;overflow-y:auto;box-shadow:-12px 0 50px rgba(0,0,0,0.6);">
+      <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:2;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--text);" id="drawer-title">CALLER PROFILE</div>
+        <div onclick="closeDrawer()" style="cursor:pointer;color:var(--text-dim);font-size:18px;padding:4px 8px;border-radius:6px;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">✕</div>
+      </div>
+      <div id="drawer-body" style="padding:20px 22px;"></div>
+    </div>
+
+    <!-- BOTTOM GRID -->
+    <div class="grid-bottom">
+
+      <!-- KNOWLEDGE BASE -->
+      <div class="kb-card">
+        <div class="kb-header">
+          <div>
+            <div class="section-title">KNOWLEDGE BASE</div>
+            <div class="section-subtitle">What your twin knows</div>
+          </div>
+          <button class="btn btn-gold" style="font-size:10px;padding:5px 14px;" onclick="document.getElementById('source-modal').style.display='flex'">+ Add Source</button>
+        </div>
+
+        <!-- SOURCE CHIPS -->
+        <div style="padding:14px 20px 0;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--border);padding-bottom:14px;">
+          <div class="source-chip connected" title="LinkedIn">
+            <span class="source-chip-icon">in</span>
+            <span>LinkedIn</span>
+            <span class="chip-status">✓</span>
+          </div>
+          <div class="source-chip connected" title="Crunchbase">
+            <span class="source-chip-icon" style="font-size:9px;">CB</span>
+            <span>Crunchbase</span>
+            <span class="chip-status">✓</span>
+          </div>
+          <div class="source-chip connected" title="Uploaded Docs">
+            <span class="source-chip-icon">📄</span>
+            <span>Docs</span>
+            <span class="chip-status">✓</span>
+          </div>
+          <div class="source-chip" title="Twitter/X" onclick="document.getElementById('source-modal').style.display='flex'">
+            <span class="source-chip-icon">𝕏</span>
+            <span>X / Twitter</span>
+            <span class="chip-status add">+</span>
+          </div>
+          <div class="source-chip" title="Podcast/Audio" onclick="document.getElementById('source-modal').style.display='flex'">
+            <span class="source-chip-icon">🎙</span>
+            <span>Podcast</span>
+            <span class="chip-status add">+</span>
+          </div>
+        </div>
+
+        <div class="kb-body">
+          <div class="kb-stat">
+            <div class="kb-stat-label">Investment Thesis</div>
+            <div class="kb-stat-value">7 docs</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+          <div class="kb-stat" style="margin-top:10px;">
+            <div class="kb-stat-label">LinkedIn Posts & Activity</div>
+            <div class="kb-stat-value">312 items</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div>
+          <div class="kb-stat" style="margin-top:10px;">
+            <div class="kb-stat-label">Crunchbase Deal History</div>
+            <div class="kb-stat-value">51 entries</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:95%"></div></div>
+          <div class="kb-stat" style="margin-top:10px;">
+            <div class="kb-stat-label">Uploaded Docs & Thesis</div>
+            <div class="kb-stat-value">24 files</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+          <div class="kb-stat" style="margin-top:10px;">
+            <div class="kb-stat-label">Speaking Style Training</div>
+            <div class="kb-stat-value">6.2h audio</div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+        </div>
+      </div>
+
+      <!-- ADD SOURCE MODAL -->
+      <div id="source-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);" onclick="if(event.target===this)this.style.display='none'">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:460px;overflow:hidden;">
+          <div style="padding:22px 24px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;">ADD KNOWLEDGE SOURCE</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Connect a source to train your digital twin</div>
+            </div>
+            <div onclick="document.getElementById('source-modal').style.display='none'" style="cursor:pointer;color:var(--text-dim);font-size:18px;line-height:1;">✕</div>
+          </div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px;">
+
+            <!-- LinkedIn -->
+            <div class="source-option">
+              <div style="width:36px;height:36px;background:#0077B5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:white;flex-shrink:0;">in</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">LinkedIn Profile</div>
+                <div style="font-size:11px;color:var(--text-dim);">Posts, experience, connections & activity</div>
+              </div>
+              <div style="font-size:11px;color:var(--green);font-weight:600;">Connected ✓</div>
+            </div>
+
+            <!-- Crunchbase -->
+            <div class="source-option">
+              <div style="width:36px;height:36px;background:#146AFF;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;color:white;flex-shrink:0;">CB</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">Crunchbase</div>
+                <div style="font-size:11px;color:var(--text-dim);">Investment history, portfolio, funding rounds</div>
+              </div>
+              <div style="font-size:11px;color:var(--green);font-weight:600;">Connected ✓</div>
+            </div>
+
+            <!-- X/Twitter -->
+            <div class="source-option source-option-cta">
+              <div style="width:36px;height:36px;background:#000;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:white;flex-shrink:0;">𝕏</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">X / Twitter</div>
+                <div style="font-size:11px;color:var(--text-dim);">Opinions, hot takes, public voice</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;">Connect</button>
+            </div>
+
+            <!-- Podcast -->
+            <div class="source-option source-option-cta">
+              <div style="width:36px;height:36px;background:#8B5CF6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🎙</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">Podcast / Interviews</div>
+                <div style="font-size:11px;color:var(--text-dim);">Upload audio or paste YouTube/Spotify URL</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;">Upload</button>
+            </div>
+
+            <!-- Upload Docs -->
+            <div class="source-option source-option-cta">
+              <div style="width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📄</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">Upload Documents</div>
+                <div style="font-size:11px;color:var(--text-dim);">PDFs, pitch decks, memos, deal notes</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;">Browse</button>
+            </div>
+
+            <!-- URL Scrape -->
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;">Paste any URL to scrape</div>
+              <div style="display:flex;gap:8px;">
+                <input type="text" placeholder="e.g. kevino.com/about, Forbes profile, blog..." style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;" />
+                <button class="btn btn-gold" style="font-size:11px;padding:8px 16px;">Scrape</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PERSONA TRAITS -->
+      <div class="kb-card">
+        <div class="kb-header">
+          <div>
+            <div class="section-title">TWIN PERSONA</div>
+            <div class="section-subtitle">Active behavioral traits</div>
+          </div>
+        </div>
+        <div class="kb-body">
+          <div style="margin-bottom:14px;">
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Communication Style</div>
+            <span class="persona-tag active">💢 Blunt & Direct</span>
+            <span class="persona-tag active">📊 Numbers First</span>
+            <span class="persona-tag">🤝 Warm Opener</span>
+            <span class="persona-tag active">💎 Royalty-Focused</span>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Investment Filters</div>
+            <span class="persona-tag active">🚫 No Pre-Revenue</span>
+            <span class="persona-tag active">📈 Profitability Path</span>
+            <span class="persona-tag active">🌍 Global Scale</span>
+            <span class="persona-tag">🏭 B2B Preferred</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Auto-Decisions</div>
+            <span class="persona-tag active">✅ Schedule Follow-up</span>
+            <span class="persona-tag active">❌ Decline Politely</span>
+            <span class="persona-tag">📧 Send NDA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE DEALS -->
+      <div class="kb-card">
+        <div class="kb-header">
+          <div>
+            <div class="section-title">PIPELINE</div>
+            <div class="section-subtitle">Deals twin is managing</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;">View All</button>
+        </div>
+        <div class="kb-body">
+          <div class="deal-row">
+            <div class="deal-logo" style="background:rgba(76,175,122,0.15);color:var(--green);">RT</div>
+            <div class="deal-info">
+              <div class="deal-name">CleanCarbon Co.</div>
+              <div class="deal-sector">CleanTech · Seed</div>
+            </div>
+            <div>
+              <div class="deal-amount">$800K</div>
+              <div class="deal-stage">In Call</div>
+            </div>
+          </div>
+          <div class="deal-row">
+            <div class="deal-logo" style="background:rgba(74,144,217,0.15);color:var(--blue);">PK</div>
+            <div class="deal-info">
+              <div class="deal-name">HealthAI Labs</div>
+              <div class="deal-sector">HealthTech · Series A</div>
+            </div>
+            <div>
+              <div class="deal-amount">$2.5M</div>
+              <div class="deal-stage">Due Diligence</div>
+            </div>
+          </div>
+          <div class="deal-row">
+            <div class="deal-logo" style="background:rgba(201,168,76,0.12);color:var(--gold);">OT</div>
+            <div class="deal-info">
+              <div class="deal-name">OceanTech</div>
+              <div class="deal-sector">Marine · Portfolio</div>
+            </div>
+            <div>
+              <div class="deal-amount">$5.0M</div>
+              <div class="deal-stage">Invested</div>
+            </div>
+          </div>
+          <div class="deal-row">
+            <div class="deal-logo" style="background:rgba(255,255,255,0.06);color:var(--text-dim);">NX</div>
+            <div class="deal-info">
+              <div class="deal-name">Nexus Pay</div>
+              <div class="deal-sector">Fintech · Seed</div>
+            </div>
+            <div>
+              <div class="deal-amount">$500K</div>
+              <div class="deal-stage">Passed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+const callers = {
+  rt: {
+    name: 'Ryan Thompson', initials: 'RT', company: 'CleanCarbon Co.',
+    sector: 'CleanTech', ask: '$4M', stage: 'Series A',
+    score: 94, scoreClass: 'score-high', rank: 1,
+    totalCalls: 3, trend: '↑ Improving', trendColor: 'var(--green)',
+    stats: [
+      { label: 'Total Calls', val: '3' },
+      { label: 'First Contact', val: 'Feb 12, 2026' },
+      { label: 'Last Call', val: 'Mar 7, 2026 (Live)' },
+      { label: 'Avg Call Duration', val: '28 min' },
+      { label: 'Deal Ask', val: '$4,000,000' },
+      { label: 'Valuation', val: '$18M pre-money' },
+      { label: 'Current MRR', val: '$47,000' },
+      { label: 'Monthly Churn', val: '4.0%' },
+    ],
+    summary: 'Strong early momentum. Founder is responsive and data-driven. Twin flagged churn concern on call 2; Ryan improved his answer by call 3. Royalty structure not yet agreed — key sticking point.',
+    history: [
+      { num: 1, date: 'Feb 12, 2026 · 24 min', summary: 'Initial pitch. Ryan presented the CleanCarbon marketplace concept. Twin probed unit economics — founder was underprepared on margins.', outcome: 'Request deck', outcomeColor: 'rgba(201,168,76,0.15)', outcomeTxt: 'var(--gold)' },
+      { num: 2, date: 'Feb 24, 2026 · 31 min', summary: 'Follow-up with updated deck. MRR confirmed at $47K. Twin pushed on churn (4%) and raised the royalty structure question for the first time. Founder pushed back.', outcome: 'Positive — follow-up', outcomeColor: 'rgba(76,175,122,0.12)', outcomeTxt: 'var(--green)' },
+      { num: 3, date: 'Mar 7, 2026 · Live now', summary: 'Live call. Twin is pressing on profitability path and royalty model. Founder more confident this time. Sentiment strongly positive. Decision likely this call.', outcome: '● Live', outcomeColor: 'rgba(76,175,122,0.15)', outcomeTxt: 'var(--green)' },
+    ]
+  },
+  pk: {
+    name: 'Priya Kapoor', initials: 'PK', company: 'NexusPay',
+    sector: 'Fintech', ask: '$2.5M', stage: 'Term Sheet',
+    score: 88, scoreClass: 'score-high', rank: 2,
+    totalCalls: 5, trend: '↑ Hot deal', trendColor: 'var(--gold)',
+    stats: [
+      { label: 'Total Calls', val: '5' },
+      { label: 'First Contact', val: 'Jan 8, 2026' },
+      { label: 'Last Call', val: 'Mar 7, 2026 · 9:42 AM' },
+      { label: 'Avg Call Duration', val: '41 min' },
+      { label: 'Deal Ask', val: '$2,500,000' },
+      { label: 'Valuation', val: '$12M pre-money' },
+      { label: 'Current MRR', val: '$210,000' },
+      { label: 'Monthly Churn', val: '1.8%' },
+    ],
+    summary: 'Most advanced deal in the pipeline. 5 calls over 2 months. Term sheet drafted. Twin has been negotiating royalty rate — currently at 2.5%, target is 4%. Cap table review scheduled. Action: Kevin needs to review final deck before signing.',
+    history: [
+      { num: 1, date: 'Jan 8, 2026 · 35 min', summary: 'Cold intro via Crunchbase. Priya presented NexusPay B2B payments platform. Twin was immediately interested — strong MRR, low churn.', outcome: 'Request full deck + financials', outcomeColor: 'rgba(201,168,76,0.15)', outcomeTxt: 'var(--gold)' },
+      { num: 2, date: 'Jan 22, 2026 · 44 min', summary: 'Deep dive on financials. Twin stressed royalty structure. Priya agreed to explore it. Competitive landscape assessed — 2 other investors circling.', outcome: 'Move to due diligence', outcomeColor: 'rgba(76,175,122,0.12)', outcomeTxt: 'var(--green)' },
+      { num: 3, date: 'Feb 10, 2026 · 38 min', summary: 'Due diligence call. Cap table reviewed. Twin flagged one angel with unusual veto rights — legal review requested. Royalty negotiation: agreed 2.5% baseline.', outcome: 'Legal review needed', outcomeColor: 'rgba(74,144,217,0.12)', outcomeTxt: 'var(--blue)' },
+      { num: 4, date: 'Feb 28, 2026 · 51 min', summary: 'Legal issues resolved. Twin drafted term sheet outline. Priya wants 3% royalty cap; twin holding at 4%. Agreed to revisit on next call.', outcome: 'Term sheet drafted', outcomeColor: 'rgba(76,175,122,0.12)', outcomeTxt: 'var(--green)' },
+      { num: 5, date: 'Mar 7, 2026 · 9:42 AM', summary: 'This morning. Cap table final review. Royalty still under negotiation. Twin needs Kevin to personally review and decide on royalty rate before closing.', outcome: '⚑ Kevin action needed', outcomeColor: 'rgba(201,168,76,0.15)', outcomeTxt: 'var(--gold)' },
+    ]
+  },
+  am: {
+    name: 'Aisha Mohammed', initials: 'AM', company: 'HealthAI Labs',
+    sector: 'HealthTech', ask: '$3M', stage: 'Due Diligence',
+    score: 75, scoreClass: 'score-mid', rank: 3,
+    totalCalls: 4, trend: '→ Steady', trendColor: 'var(--blue)',
+    stats: [
+      { label: 'Total Calls', val: '4' },
+      { label: 'First Contact', val: 'Jan 20, 2026' },
+      { label: 'Last Call', val: 'Mar 5, 2026' },
+      { label: 'Avg Call Duration', val: '33 min' },
+      { label: 'Deal Ask', val: '$3,000,000' },
+      { label: 'Valuation', val: '$22M pre-money' },
+      { label: 'Current MRR', val: '$88,000' },
+      { label: 'Monthly Churn', val: '2.9%' },
+    ],
+    summary: 'Solid deal but valuation feels high. Twin has been probing FDA regulatory risk — Aisha has been evasive on timeline. Cap table review is today\'s agenda. Score held back by regulatory uncertainty and valuation gap.',
+    history: [
+      { num: 1, date: 'Jan 20, 2026 · 28 min', summary: 'Intro call. HealthAI diagnostic platform — AI-driven early disease detection. Strong clinical partnerships. Twin noted FDA approval still pending.', outcome: 'Request regulatory docs', outcomeColor: 'rgba(201,168,76,0.15)', outcomeTxt: 'var(--gold)' },
+      { num: 2, date: 'Feb 3, 2026 · 37 min', summary: 'Regulatory deep dive. FDA timeline 12-18 months — longer than ideal. Twin pushed back on $22M valuation. Aisha defended with clinical data. Stalemate on price.', outcome: 'Valuation under review', outcomeColor: 'rgba(74,144,217,0.12)', outcomeTxt: 'var(--blue)' },
+      { num: 3, date: 'Feb 20, 2026 · 29 min', summary: 'Revenue model discussion. Twin proposed milestone-based royalty tied to FDA approval. Aisha open to it. Cap table shared — some complexity with university IP licensing.', outcome: 'IP review needed', outcomeColor: 'rgba(201,168,76,0.15)', outcomeTxt: 'var(--gold)' },
+      { num: 4, date: 'Mar 5, 2026 · 38 min', summary: 'IP issues partially resolved. University license terms acceptable. Cap table review scheduled for today 11AM. Twin to push on final valuation and royalty rate.', outcome: 'Cap table call today', outcomeColor: 'rgba(74,144,217,0.12)', outcomeTxt: 'var(--blue)' },
+    ]
+  },
+  ml: {
+    name: 'Marcus Lee', initials: 'ML', company: 'OceanTech',
+    sector: 'Marine / Portfolio', ask: 'Invested', stage: 'Portfolio Co.',
+    score: 61, scoreClass: 'score-mid', rank: 4,
+    totalCalls: 8, trend: '↑ Strong growth', trendColor: 'var(--green)',
+    stats: [
+      { label: 'Total Calls', val: '8' },
+      { label: 'First Contact', val: 'Sep 14, 2024' },
+      { label: 'Last Call', val: 'Mar 6, 2026' },
+      { label: 'Avg Call Duration', val: '22 min' },
+      { label: 'Amount Invested', val: '$5,000,000' },
+      { label: 'Current Valuation', val: '$31M' },
+      { label: 'Q4 Revenue Growth', val: '+42%' },
+      { label: 'Royalty Rate', val: '3.5%' },
+    ],
+    summary: 'Portfolio company performing well — Q4 revenue up 42%. Twin handles quarterly check-ins. Marcus is reliable, transparent, and sends financials ahead of every call. Score lower only because deal is already closed — no new capital at play.',
+    history: [
+      { num: 1, date: 'Sep 14, 2024 · 45 min', summary: 'Initial pitch. Marine pollution monitoring tech. Kevin invested $5M for 18% equity + 3.5% royalty. Strong strategic fit.', outcome: 'Deal closed ✓', outcomeColor: 'rgba(76,175,122,0.12)', outcomeTxt: 'var(--green)' },
+      { num: 5, date: 'Jun 2025 · Q2 Update', summary: 'Q2 revenue $1.2M. Twin handled. Expansion into Southeast Asia discussed. On track.', outcome: 'Positive', outcomeColor: 'rgba(76,175,122,0.12)', outcomeTxt: 'var(--green)' },
+      { num: 7, date: 'Dec 2025 · Q3 Update', summary: 'Q3 revenue $1.8M (+50% YoY). New government contracts in EU. Potential Series B in 2026.', outcome: 'Exceptional', outcomeColor: 'rgba(76,175,122,0.12)', outcomeTxt: 'var(--green)' },
+      { num: 8, date: 'Mar 6, 2026 · 19 min', summary: 'Q4 review. Revenue +42%. Series B prep underway. Marcus requesting intro to 2 other investors in Kevin\'s network. Twin escalated — Kevin to decide.', outcome: 'Referral request → Kevin', outcomeColor: 'rgba(201,168,76,0.15)', outcomeTxt: 'var(--gold)' },
+    ]
+  },
+  jc: {
+    name: 'James Chen', initials: 'JC', company: 'CloudDesk SaaS',
+    sector: 'SaaS', ask: '$1M', stage: 'Passed',
+    score: 18, scoreClass: 'score-low', rank: 5,
+    totalCalls: 1, trend: '↓ Declined', trendColor: 'var(--red)',
+    stats: [
+      { label: 'Total Calls', val: '1' },
+      { label: 'First Contact', val: 'Mar 6, 2026' },
+      { label: 'Last Call', val: 'Mar 6, 2026' },
+      { label: 'Call Duration', val: '11 min' },
+      { label: 'Deal Ask', val: '$1,000,000' },
+      { label: 'Valuation', val: '$8M pre-money' },
+      { label: 'Current MRR', val: '$12,000' },
+      { label: 'Gross Margin', val: '28%' },
+    ],
+    summary: 'Twin declined after 11 minutes. Low gross margins (28%) for a SaaS business — well below the 70%+ standard Kevin requires. No clear competitive moat. No path to royalty structure. Deal does not meet minimum investment criteria.',
+    history: [
+      { num: 1, date: 'Mar 6, 2026 · 11 min', summary: 'Cold inbound. B2B help-desk SaaS. Twin probed margins — 28% gross margin flagged immediately as unacceptable. No differentiation vs Zendesk/Intercom. Twin politely declined and ended call.', outcome: 'Passed — low margin', outcomeColor: 'rgba(224,90,90,0.1)', outcomeTxt: 'var(--red)' },
+    ]
+  },
+};
+
+function openDetail(id) {
+  const c = callers[id];
+  if (!c) return;
+
+  // Highlight active row
+  document.querySelectorAll('.call-item').forEach(el => el.classList.remove('selected-row'));
+  document.querySelectorAll(`.call-item[onclick*="openDetail('${id}')"]`).forEach(el => el.classList.add('selected-row'));
+
+  const statsRows = c.stats.map(s => `
+    <div class="drawer-stat-row" style="font-size:11px;">
+      <div class="drawer-stat-label">${s.label}</div>
+      <div class="drawer-stat-val">${s.val}</div>
+    </div>`).join('');
+
+  const historyRows = c.history.map(h => `
+    <div class="history-call-row" style="padding:8px 0;">
+      <div class="history-num">${h.num}</div>
+      <div class="history-content">
+        <div class="history-date">${h.date}</div>
+        <div class="history-summary">${h.summary}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;">
+          <span class="history-outcome" style="background:${h.outcomeColor};color:${h.outcomeTxt};">${h.outcome}</span>
+          <button style="background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-size:10px;padding:2px 8px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.borderColor='var(--gold-dim)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">📄 Transcript</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  const isLive = id === 'rt';
+  const avatarBg = id === 'rt' ? 'rgba(76,175,122,0.15)' : id === 'pk' ? 'rgba(201,168,76,0.12)' : id === 'am' ? 'rgba(74,144,217,0.15)' : 'rgba(255,255,255,0.06)';
+  const avatarColor = id === 'rt' ? 'var(--green)' : id === 'pk' ? 'var(--gold)' : id === 'am' ? 'var(--blue)' : 'var(--text-mid)';
+  const liveBadge = isLive ? `<span style="background:rgba(76,175,122,0.15);border:1px solid rgba(76,175,122,0.3);color:var(--green);font-size:9px;font-weight:700;letter-spacing:1.5px;padding:2px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;"><span style="width:5px;height:5px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span>` : '';
+
+  const liveVideoBlock = isLive ? `
+    <div style="position:relative;background:#080808;border-bottom:1px solid var(--border);overflow:hidden;">
+      <!-- Video background glow -->
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 40% 50%, rgba(76,175,122,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(201,168,76,0.05) 0%, transparent 50%);pointer-events:none;"></div>
+
+      <!-- Split: Twin left, Caller right -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;height:140px;position:relative;z-index:1;">
+
+        <!-- Twin feed -->
+        <div style="position:relative;border-right:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;">
+          <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2A2000,#6B5520);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);box-shadow:0 0 24px rgba(201,168,76,0.18);">KO</div>
+          <!-- Waveform -->
+          <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:14px;">
+            <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:5px;animation-delay:0s;"></div>
+            <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:11px;animation-delay:0.1s;"></div>
+            <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:8px;animation-delay:0.2s;"></div>
+            <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:14px;animation-delay:0.3s;"></div>
+            <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:6px;animation-delay:0.4s;"></div>
+            <div style="width:2px;background:var(--gold);border-radius:2px;animation:wave 0.8s ease-in-out infinite;height:12px;animation-delay:0.15s;"></div>
+          </div>
+          <!-- Label -->
+          <div style="position:absolute;top:8px;left:10px;font-size:9px;color:var(--gold);font-weight:600;letter-spacing:1px;opacity:0.8;">TWIN ✦</div>
+        </div>
+
+        <!-- Caller feed -->
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(76,175,122,0.15);border:2px solid rgba(76,175,122,0.5);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);">RT</div>
+          <!-- Label -->
+          <div style="position:absolute;top:8px;left:10px;font-size:9px;color:var(--text-dim);font-weight:500;letter-spacing:1px;">RYAN T.</div>
+        </div>
+      </div>
+
+      <!-- Bottom bar -->
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(0,0,0,0.7));display:flex;align-items:center;justify-content:space-between;z-index:2;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:6px;height:6px;background:var(--red);border-radius:50%;display:inline-block;animation:blink 1s infinite;"></span>
+          <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px;">LIVE · 32:14</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);font-size:10px;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">👁 Monitor</button>
+          <button style="background:rgba(224,90,90,0.2);border:1px solid rgba(224,90,90,0.3);color:var(--red);font-size:10px;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='rgba(224,90,90,0.35)'" onmouseout="this.style.background='rgba(224,90,90,0.2)'">✋ Take Over</button>
+        </div>
+      </div>
+    </div>` : '';
+
+  document.getElementById('detail-panel-body').innerHTML = `
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);${isLive ? 'background:rgba(76,175,122,0.04);' : ''}display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:${avatarBg};border:2px solid ${avatarColor};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:${avatarColor};flex-shrink:0;">${c.initials}</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;">${c.name.toUpperCase()}</div>
+            ${liveBadge}
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">${c.company} · ${c.sector} · ${c.totalCalls} calls · <span style="color:${c.trendColor}">${c.trend}</span></div>
+        </div>
+      </div>
+      <div class="priority-score ${c.scoreClass}" style="width:36px;height:28px;font-size:13px;">${c.score}</div>
+    </div>
+
+    ${liveVideoBlock}
+
+    <div style="padding:11px 18px;border-bottom:1px solid var(--border);">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px;">AI Deal Summary</div>
+      <div style="font-size:11px;color:var(--text-mid);line-height:1.55;">${c.summary}</div>
+    </div>
+
+    <div style="padding:10px 18px;border-bottom:1px solid var(--border);">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Deal Stats</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">${statsRows}</div>
+    </div>
+
+    <div style="padding:12px 18px;overflow-y:auto;max-height:360px;">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Call History · ${c.totalCalls} Calls</div>
+      ${historyRows}
+    </div>
+  `;
+}
+
+function openDrawer(id) { openDetail(id); }
+
+function togglePersonaMenu(el) {
+  const submenu = document.getElementById('persona-submenu');
+  const icon = document.getElementById('persona-toggle-icon');
+  const isOpen = submenu.style.display !== 'none';
+  submenu.style.display = isOpen ? 'none' : 'block';
+  icon.textContent = isOpen ? '+' : '−';
+  icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(0deg)';
+  el.classList.toggle('active', !isOpen);
+}
+
+function switchQueueTab(el, tab) {
+  document.querySelectorAll('.queue-tab').forEach(t => t.classList.remove('active-tab'));
+  el.classList.add('active-tab');
+  const colHeaders = document.querySelector('.call-feed [style*="grid-template-columns:30px"]');
+  const rankItems = document.querySelectorAll('.call-item[onclick*="openDetail"]');
+  const callQueueTab = document.getElementById('callqueue-tab');
+  if (tab === 'priority') {
+    if (colHeaders) colHeaders.style.display = '';
+    rankItems.forEach(r => r.style.display = '');
+    callQueueTab.style.display = 'none';
+  } else {
+    if (colHeaders) colHeaders.style.display = 'none';
+    rankItems.forEach(r => r.style.display = 'none');
+    callQueueTab.style.display = 'block';
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('caller-drawer').style.display = 'none';
+  document.getElementById('drawer-overlay').style.display = 'none';
+}
+
+// Load Ryan by default on page load
+window.addEventListener('DOMContentLoaded', () => openDetail('rt'));
+</script>
+</body>
+</html>
