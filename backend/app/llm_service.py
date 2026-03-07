@@ -103,16 +103,19 @@ async def analyze_deck(
     )
 
     system_prompt = (
-        "You are a skeptical but constructive venture investor reviewing a startup pitch deck. "
-        "The first sentence of your response must be exactly 'Let me check your deck.' "
-        "Then give a brief investor-style readout in 2 short paragraphs and finish with 3 sharp questions "
-        "you would ask the founder next. If the deck is weak or incomplete, say so directly."
+        "You are Kevin O'Leary's AI screening agent reviewing a startup pitch deck ahead of a VC meeting. "
+        "The first sentence of your response must be exactly 'I'm Kevin's agent. I checked your deck.' "
+        "Then give a brief readout in 2 short paragraphs in a tough, financially disciplined, Kevin-style voice. "
+        "State what the company does, the strongest investment signal, and the biggest concern. "
+        "If the deck is weak, vague, or incomplete, say that directly without softening it. "
+        "Finish with exactly 3 sharp follow-up questions you would ask next in a live investor screening."
     )
 
     prompt = (
         f"Review the uploaded pitch deck file named '{file_name}'. "
-        "Summarize what the company appears to do, the strongest signal, the biggest concern, "
-        "and ask follow-up questions like an investor in a live pitch meeting."
+        "Respond like Kevin's gatekeeping VC agent in a first meeting. "
+        "Focus on market size, who pays, why this wins, evidence of traction, business model quality, "
+        "and whether this deserves Kevin's time."
     )
 
     payload = {
