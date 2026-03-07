@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     akool_language: str = "en"
     akool_session_duration_minutes: int = 10
 
+    # Database (Supabase/Postgres)
+    database_url: str = ""
+
     # Gemini (Vertex AI with API key)
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash-lite"

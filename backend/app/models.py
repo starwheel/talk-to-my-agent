@@ -39,6 +39,19 @@ class SessionCloseRequest(BaseModel):
     session_id: str
 
 
+class EndSessionRequest(BaseModel):
+    session_id: str
+    messages: List[Dict[str, Any]] = []
+    user_id: str = "default"
+    duration_seconds: Optional[int] = None
+
+
+class EndSessionResponse(BaseModel):
+    summary: str
+    transcript_id: int
+    message_count: int
+
+
 # --- WebSocket events (frontend <-> backend) ---
 
 class WSEvent(BaseModel):

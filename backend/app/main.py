@@ -19,9 +19,11 @@ from .models import (
     ConversationResponse,
     SessionCreateRequest,
     SessionCloseRequest,
+    EndSessionRequest,
+    EndSessionResponse,
     WSEvent,
 )
-from . import akool_service, llm_service, conversation
+from . import akool_service, llm_service, conversation, database
 
 logger = logging.getLogger("avatar-backend")
 logging.basicConfig(level=logging.INFO)
@@ -35,7 +37,9 @@ _ws_clients: Dict[str, WebSocket] = {}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Avatar backend starting...")
+    await database.init_db()
     yield
+    await database.close_db()
     logger.info("Avatar backend shutting down.")
 
 
@@ -113,6 +117,60 @@ async def close_session(req: SessionCloseRequest):
     except Exception as e:
         logger.error(f"Session close failed: {e}")
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/api/session/end", response_model=EndSessionResponse)
+async def end_session(req: EndSessionRequest):
+    """End a session: close Akool, generate summary, save transcript to DB."""
+    # 1. Close Akool session
+    try:
+        await akool_service.close_session(req.session_id)
+    except Exception as e:
+        logger.warning(f"Akool session close failed (continuing): {e}")
+
+    logger.info(f"[EndSession] session_id={req.session_id}, frontend_messages={len(req.messages)}, user_id={req.user_id}")
+    for i, m in enumerate(req.messages):
+        logger.info(f"  [{i}] {m.get('role')}: {m.get('text', '')[:80]}")
+
+    # 2. Collect messages — use frontend messages, fall back to server-side history
+    messages = req.messages
+    if not messages:
+        server_history = conversation.get_history(req.user_id)
+        messages = [{"role": m.role, "text": m.text} for m in server_history]
+
+    # 3. Generate summary from conversation
+    summary = "No messages in this session."
+    if messages:
+        transcript_text = "\n".join(
+            f"{m.get('role', 'unknown')}: {m.get('text', '')}" for m in messages
+        )
+        try:
+            summary = await llm_service.get_reply(
+                transcript=f"Summarize this conversation in 2-3 sentences:\n\n{transcript_text}",
+                history=[],
+                system_prompt="You are a conversation summarizer. Provide a brief, clear summary of the key topics discussed and any conclusions reached. Be concise.",
+            )
+        except Exception as e:
+            logger.error(f"Summary generation failed: {e}")
+            summary = f"Conversation with {len(messages)} messages (summary unavailable)."
+
+    # 4. Save to database
+    transcript_id = await database.save_transcript(
+        session_id=req.session_id,
+        messages=messages,
+        summary=summary,
+        user_id=req.user_id,
+        duration_seconds=req.duration_seconds,
+    )
+
+    # 5. Clear server-side history for this user
+    conversation.clear_history(req.user_id)
+
+    return EndSessionResponse(
+        summary=summary,
+        transcript_id=transcript_id,
+        message_count=len(messages),
+    )
 
 
 @app.get("/api/avatars")

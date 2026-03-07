@@ -24,6 +24,12 @@ type ChatMessage = {
   text: string;
 };
 
+type SummaryData = {
+  summary: string;
+  messageCount: number;
+  duration: string;
+};
+
 function buildChatPayload(messageId: string, text: string, idx = 0, fin = true) {
   return {
     v: 2,
@@ -47,20 +53,31 @@ function buildCommandPayload(command: string, data?: Record<string, unknown>) {
   };
 }
 
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m === 0) return `${s}s`;
+  return `${m}m ${s}s`;
+}
+
 export default function App() {
   const [text, setText] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const micTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const remoteUserRef = useRef<IAgoraRTCRemoteUser | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const sessionStartRef = useRef<number>(0);
 
   const canSend = useMemo(() => isConnected && text.trim().length > 0 && !isSending, [isConnected, text, isSending]);
 
@@ -116,6 +133,8 @@ export default function App() {
     setError(null);
     setIsStarting(true);
     setMessages([]);
+    setSummaryData(null);
+    setShowSummary(false);
 
     try {
       const response = await fetch(`${API_BASE}/api/session`, {
@@ -155,6 +174,7 @@ export default function App() {
 
       setSessionId(session.session_id);
       setIsConnected(true);
+      sessionStartRef.current = Date.now();
 
       await sendData(buildCommandPayload('set-params', { vid: VOICE_ID }));
     } catch (startError) {
@@ -167,22 +187,47 @@ export default function App() {
   };
 
   const stopSession = async () => {
+    if (!sessionId || isEnding) return;
+
+    setIsEnding(true);
     const currentSessionId = sessionId;
+    const currentMessages = [...messages];
+    const durationSeconds = Math.round((Date.now() - sessionStartRef.current) / 1000);
+
     await cleanupAgora();
 
-    if (currentSessionId) {
-      try {
-        await fetch(`${API_BASE}/api/session/close`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: currentSessionId }),
+    const payload = {
+      session_id: currentSessionId,
+      messages: currentMessages.map((m) => ({ role: m.role === 'ai' ? 'assistant' : 'user', text: m.text })),
+      duration_seconds: durationSeconds,
+    };
+    console.log('[EndCall] Sending transcript:', JSON.stringify(payload, null, 2));
+    console.log(`[EndCall] Message count: ${currentMessages.length}, Duration: ${durationSeconds}s`);
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/session/end`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (resp.ok) {
+        const data = (await resp.json()) as { summary: string; transcript_id: number; message_count: number };
+        setSummaryData({
+          summary: data.summary,
+          messageCount: data.message_count,
+          duration: formatDuration(durationSeconds),
         });
-      } catch (e) {
-        console.error(e);
+        setShowSummary(true);
+      } else {
+        console.error('End session failed:', await resp.text());
       }
+    } catch (e) {
+      console.error('End session error:', e);
     }
 
     setSessionId(null);
+    setIsEnding(false);
   };
 
   const sendText = async () => {
@@ -239,8 +284,8 @@ export default function App() {
             </button>
           ) : (
             <>
-              <button className="btn-call end" onClick={() => void stopSession()}>
-                End Call
+              <button className="btn-call end" onClick={() => void stopSession()} disabled={isEnding}>
+                {isEnding ? 'Ending...' : 'End Call'}
               </button>
               <button className="btn-call interrupt" onClick={() => void interrupt()}>
                 Interrupt
@@ -284,6 +329,33 @@ export default function App() {
           </button>
         </div>
       </div>
+
+      {/* Summary Popup */}
+      {showSummary && summaryData && (
+        <div className="summary-overlay" onClick={() => setShowSummary(false)}>
+          <div className="summary-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="summary-icon">✓</div>
+            <h2>Call Ended</h2>
+            <div className="summary-stats">
+              <div className="stat">
+                <span className="stat-value">{summaryData.messageCount}</span>
+                <span className="stat-label">Messages</span>
+              </div>
+              <div className="stat">
+                <span className="stat-value">{summaryData.duration}</span>
+                <span className="stat-label">Duration</span>
+              </div>
+            </div>
+            <div className="summary-section">
+              <h3>Summary</h3>
+              <p>{summaryData.summary}</p>
+            </div>
+            <button className="summary-close" onClick={() => setShowSummary(false)}>
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
