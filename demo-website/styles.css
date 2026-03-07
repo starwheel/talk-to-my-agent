@@ -1,0 +1,464 @@
+:root {
+  font-family: Georgia, "Times New Roman", serif;
+  color: #f2eadb;
+  background:
+    radial-gradient(circle at top, rgba(185, 139, 67, 0.18), transparent 28%),
+    linear-gradient(180deg, #120f0b 0%, #080706 52%, #120d07 100%);
+  --page-bg: #0b0907;
+  --panel: rgba(25, 20, 15, 0.82);
+  --panel-strong: rgba(35, 28, 18, 0.95);
+  --border: rgba(205, 168, 99, 0.25);
+  --accent-strong: #e2bc78;
+  --muted: #c7b79d;
+  --white: #f7f1e6;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--page-bg);
+}
+
+a {
+  color: inherit;
+}
+
+.page-shell {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(1200px, 100%);
+  margin: 0 auto 28px;
+  padding: 18px 24px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: rgba(12, 10, 8, 0.78);
+  backdrop-filter: blur(14px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(226, 188, 120, 0.45);
+  border-radius: 50%;
+  color: var(--accent-strong);
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+}
+
+.brand-text,
+.topnav a,
+.button {
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+.brand-text {
+  font-size: 0.92rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.topnav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topnav a:hover {
+  color: var(--white);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button-nav,
+.button-secondary {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.button-primary {
+  border: 1px solid rgba(226, 188, 120, 0.45);
+  background: linear-gradient(135deg, #8d6736 0%, #caa15b 50%, #e2bc78 100%);
+  color: #1a1209;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  gap: 32px;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 44px 0 28px;
+}
+
+.hero-copy,
+.hero-visual,
+.intro-band,
+.portfolio-section,
+.approach-section,
+.cta-panel {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+}
+
+.hero-copy {
+  padding: 52px;
+  border-radius: 34px;
+}
+
+.eyebrow {
+  margin-bottom: 18px;
+  color: var(--accent-strong);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.section-heading h2,
+.cta-panel h2 {
+  color: var(--white);
+  line-height: 0.95;
+  font-weight: 500;
+}
+
+.hero h1 {
+  max-width: 9ch;
+  font-size: clamp(3.9rem, 8vw, 6.9rem);
+}
+
+.hero-text,
+.intro-band p,
+.pillar-card p,
+.cta-panel p {
+  color: var(--muted);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.hero-text {
+  max-width: 56ch;
+  margin-top: 24px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 42px;
+}
+
+.hero-stats div {
+  padding-top: 18px;
+  border-top: 1px solid rgba(226, 188, 120, 0.2);
+}
+
+.hero-stats dt {
+  color: var(--white);
+  font-size: 1.9rem;
+}
+
+.hero-stats dd {
+  margin-top: 8px;
+  color: var(--muted);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.hero-visual {
+  position: relative;
+  min-height: 720px;
+  border-radius: 34px;
+  overflow: hidden;
+}
+
+.portrait-card {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 55% 18%, rgba(226, 188, 120, 0.42), transparent 16%),
+    radial-gradient(circle at 50% 58%, rgba(226, 188, 120, 0.12), transparent 28%),
+    linear-gradient(180deg, #3c2d1d 0%, #17110c 28%, #0d0b08 100%);
+}
+
+.portrait-card::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(226, 188, 120, 0.18);
+  border-radius: 28px;
+}
+
+.portrait-glow {
+  position: absolute;
+  inset: auto 12% 10% 12%;
+  height: 64%;
+  border-radius: 240px 240px 48px 48px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 226, 169, 0.8), rgba(214, 164, 84, 0.28) 22%, transparent 34%),
+    radial-gradient(circle at 50% 48%, rgba(66, 49, 30, 0.9), rgba(23, 17, 12, 0.96) 56%);
+  filter: blur(1px);
+}
+
+.portrait-frame {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  bottom: 42px;
+  padding: 28px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(15, 11, 8, 0.05), rgba(15, 11, 8, 0.82));
+}
+
+.portrait-label,
+.portrait-title {
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  text-transform: uppercase;
+}
+
+.portrait-label {
+  color: var(--white);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.portrait-title {
+  margin-top: 8px;
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+}
+
+.section {
+  width: min(1200px, 100%);
+  margin: 28px auto 0;
+}
+
+.intro-band {
+  padding: 30px 36px;
+  border-radius: 28px;
+}
+
+.portfolio-section,
+.approach-section {
+  padding: 42px 36px;
+  border-radius: 34px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.section-heading h2,
+.cta-panel h2 {
+  max-width: 14ch;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+}
+
+.logo-grid,
+.pillar-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.logo-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.logo-card {
+  display: grid;
+  place-items: center;
+  min-height: 132px;
+  padding: 18px;
+  border: 1px solid rgba(226, 188, 120, 0.16);
+  border-radius: 24px;
+  background: var(--panel-strong);
+}
+
+.logo-card span {
+  color: var(--white);
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.pillar-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pillar-card {
+  padding: 28px;
+  border: 1px solid rgba(226, 188, 120, 0.16);
+  border-radius: 24px;
+  background: var(--panel-strong);
+}
+
+.pillar-card h3 {
+  margin-bottom: 12px;
+  color: var(--white);
+  font-size: 1.55rem;
+  font-weight: 500;
+}
+
+.cta-section {
+  padding-bottom: 48px;
+}
+
+.cta-panel {
+  display: grid;
+  gap: 18px;
+  padding: 42px 36px;
+  border-radius: 34px;
+  text-align: center;
+  place-items: center;
+}
+
+.cta-panel p {
+  max-width: 60ch;
+}
+
+@media (max-width: 1024px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-visual {
+    min-height: 560px;
+  }
+
+  .logo-grid,
+  .pillar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    padding: 14px;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .topnav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .hero-copy,
+  .portfolio-section,
+  .approach-section,
+  .cta-panel,
+  .intro-band {
+    padding: 28px 22px;
+    border-radius: 26px;
+  }
+
+  .hero h1 {
+    max-width: none;
+    font-size: clamp(3rem, 13vw, 4.5rem);
+  }
+
+  .hero-stats,
+  .logo-grid,
+  .pillar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .hero-visual {
+    min-height: 420px;
+  }
+
+  .portrait-frame {
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    padding: 22px;
+  }
+
+  .portrait-label {
+    font-size: 1.05rem;
+  }
+}
