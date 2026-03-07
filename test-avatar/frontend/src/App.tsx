@@ -5,6 +5,9 @@ import AgoraRTC, {
   type IMicrophoneAudioTrack,
 } from 'agora-rtc-sdk-ng';
 
+const API_BASE = 'http://localhost:8000';
+const VOICE_ID = 'hae0UoGzmG25-6LDrB39Q';
+
 type SessionResponse = {
   session_id: string;
   agora: {
@@ -15,9 +18,10 @@ type SessionResponse = {
   };
 };
 
-type LogEntry = {
+type ChatMessage = {
   id: number;
-  message: string;
+  role: 'user' | 'ai';
+  text: string;
 };
 
 function buildChatPayload(messageId: string, text: string, idx = 0, fin = true) {
@@ -44,27 +48,29 @@ function buildCommandPayload(command: string, data?: Record<string, unknown>) {
 }
 
 export default function App() {
-  const [apiBase, setApiBase] = useState('http://localhost:8000');
-  const [avatarId, setAvatarId] = useState('');
-  const [voiceId, setVoiceId] = useState('');
   const [text, setText] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const micTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const remoteUserRef = useRef<IAgoraRTCRemoteUser | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  const canSend = useMemo(() => isConnected && text.trim().length > 0, [isConnected, text]);
-  const canStart = useMemo(() => !isStarting && !isConnected, [isConnected, isStarting]);
+  const canSend = useMemo(() => isConnected && text.trim().length > 0 && !isSending, [isConnected, text, isSending]);
 
-  const appendLog = (message: string) => {
-    setLogs((current) => [{ id: Date.now() + Math.random(), message }, ...current].slice(0, 20));
+  const addMessage = (role: 'user' | 'ai', msg: string) => {
+    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), role, text: msg }]);
   };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const cleanupAgora = async () => {
     try {
@@ -74,45 +80,34 @@ export default function App() {
         micTrackRef.current.close();
         micTrackRef.current = null;
       }
-
       if (clientRef.current) {
         clientRef.current.removeAllListeners();
         await clientRef.current.leave();
         clientRef.current = null;
       }
-
       remoteUserRef.current = null;
       setIsConnected(false);
-    } catch (cleanupError) {
-      console.error(cleanupError);
+    } catch (e) {
+      console.error(e);
     }
   };
 
   useEffect(() => {
-    return () => {
-      void cleanupAgora();
-    };
+    return () => { void cleanupAgora(); };
   }, []);
 
   const sendData = async (payload: object) => {
     const client = clientRef.current as IAgoraRTCClient & {
       sendStreamMessage?: (data: string, reliable: boolean) => Promise<void>;
     };
-
     if (!client?.sendStreamMessage) {
-      throw new Error('Agora stream messaging is not available on this client');
+      throw new Error('Agora stream messaging is not available');
     }
-
-    const textPayload = JSON.stringify(payload);
-    await client.sendStreamMessage(textPayload, false);
-    appendLog(`sent: ${textPayload}`);
+    await client.sendStreamMessage(JSON.stringify(payload), false);
   };
 
   const attachRemoteVideo = (user: IAgoraRTCRemoteUser) => {
-    if (!videoContainerRef.current || !user.videoTrack) {
-      return;
-    }
-
+    if (!videoContainerRef.current || !user.videoTrack) return;
     videoContainerRef.current.innerHTML = '';
     user.videoTrack.play(videoContainerRef.current);
   };
@@ -120,15 +115,13 @@ export default function App() {
   const startSession = async () => {
     setError(null);
     setIsStarting(true);
+    setMessages([]);
 
     try {
-      const response = await fetch(`${apiBase}/api/session`, {
+      const response = await fetch(`${API_BASE}/api/session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          avatar_id: avatarId || undefined,
-          voice_id: voiceId || undefined,
-        }),
+        body: JSON.stringify({ voice_id: VOICE_ID }),
       });
 
       const session = (await response.json()) as SessionResponse | { detail?: string };
@@ -144,24 +137,15 @@ export default function App() {
       client.on('user-published', async (user, mediaType) => {
         await client.subscribe(user, mediaType);
         remoteUserRef.current = user;
-        appendLog(`remote published ${mediaType}`);
-
-        if (mediaType === 'video') {
-          attachRemoteVideo(user);
-        }
-
-        if (mediaType === 'audio' && user.audioTrack) {
-          user.audioTrack.play();
-        }
+        if (mediaType === 'video') attachRemoteVideo(user);
+        if (mediaType === 'audio' && user.audioTrack) user.audioTrack.play();
       });
 
-      client.on('user-unpublished', (_user, mediaType) => {
-        appendLog(`remote unpublished ${mediaType}`);
-      });
+      client.on('user-unpublished', () => {});
 
       client.on('stream-message', (_uid: number, payload: Uint8Array) => {
         const decoded = new TextDecoder().decode(payload);
-        appendLog(`recv: ${decoded}`);
+        console.log('avatar:', decoded);
       });
 
       await client.join(session.agora.appId, session.agora.channel, session.agora.token, session.agora.uid);
@@ -171,17 +155,11 @@ export default function App() {
 
       setSessionId(session.session_id);
       setIsConnected(true);
-      appendLog('joined Agora and published microphone');
 
-      await sendData(
-        buildCommandPayload('set-params', {
-          ...(voiceId ? { vid: voiceId } : {}),
-        }),
-      );
+      await sendData(buildCommandPayload('set-params', { vid: VOICE_ID }));
     } catch (startError) {
       const message = startError instanceof Error ? startError.message : 'Unknown startup error';
       setError(message);
-      appendLog(`error: ${message}`);
       await cleanupAgora();
     } finally {
       setIsStarting(false);
@@ -194,115 +172,117 @@ export default function App() {
 
     if (currentSessionId) {
       try {
-        await fetch(`${apiBase}/api/session/close`, {
+        await fetch(`${API_BASE}/api/session/close`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: currentSessionId }),
         });
-      } catch (closeError) {
-        console.error(closeError);
+      } catch (e) {
+        console.error(e);
       }
     }
 
     setSessionId(null);
-    appendLog('session stopped');
   };
 
   const sendText = async () => {
-    if (!canSend) {
-      return;
-    }
+    if (!canSend) return;
 
     const content = text.trim();
     setText('');
+    addMessage('user', content);
+    setIsSending(true);
 
     try {
-      await sendData(buildChatPayload(`msg-${Date.now()}`, content));
+      const resp = await fetch(`${API_BASE}/api/conversation/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: content }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({ detail: 'Backend error' }));
+        throw new Error(typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail));
+      }
+
+      const { response_text } = (await resp.json()) as { response_text: string; turn_id: string };
+      addMessage('ai', response_text);
+
+      await sendData(buildChatPayload(`msg-${Date.now()}`, response_text));
     } catch (sendError) {
       const message = sendError instanceof Error ? sendError.message : 'Unknown send error';
       setError(message);
-      appendLog(`error: ${message}`);
+    } finally {
+      setIsSending(false);
     }
   };
 
   const interrupt = async () => {
     try {
       await sendData(buildCommandPayload('interrupt'));
-    } catch (interruptError) {
-      const message = interruptError instanceof Error ? interruptError.message : 'Unknown interrupt error';
-      setError(message);
-      appendLog(`error: ${message}`);
+    } catch (e) {
+      console.error(e);
     }
   };
 
   return (
-    <div className="app-shell">
-      <div className="panel">
-        <h1>Test Avatar</h1>
-        <p className="subtitle">FastAPI creates the AKOOL session. The browser joins Agora and streams mic audio directly.</p>
+    <div className="call-layout">
+      {/* Video area */}
+      <div className="video-area">
+        <div ref={videoContainerRef} className="video-frame" />
 
-        <label>
-          Backend URL
-          <input value={apiBase} onChange={(event) => setApiBase(event.target.value)} />
-        </label>
-
-        <label>
-          Avatar ID
-          <input value={avatarId} onChange={(event) => setAvatarId(event.target.value)} placeholder="akool avatar id" />
-        </label>
-
-        <label>
-          Voice ID
-          <input value={voiceId} onChange={(event) => setVoiceId(event.target.value)} placeholder="optional voice id" />
-        </label>
-
-        <div className="actions">
-          <button onClick={startSession} disabled={!canStart}>
-            {isStarting ? 'Starting...' : 'Start Session'}
-          </button>
-          <button onClick={() => void stopSession()} disabled={!sessionId}>
-            Stop
-          </button>
+        {/* Call controls overlay */}
+        <div className="call-controls">
+          {!isConnected ? (
+            <button className="btn-call start" onClick={startSession} disabled={isStarting}>
+              {isStarting ? 'Connecting...' : 'Start Call'}
+            </button>
+          ) : (
+            <>
+              <button className="btn-call end" onClick={() => void stopSession()}>
+                End Call
+              </button>
+              <button className="btn-call interrupt" onClick={() => void interrupt()}>
+                Interrupt
+              </button>
+            </>
+          )}
         </div>
 
-        <div className="status-row">
-          <span className={isConnected ? 'status ok' : 'status'}>{isConnected ? 'Connected' : 'Disconnected'}</span>
-          {sessionId ? <code>{sessionId}</code> : null}
-        </div>
-
-        <div className="chat-row">
-          <input
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="Type text for the avatar"
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                void sendText();
-              }
-            }}
-          />
-          <button onClick={() => void sendText()} disabled={!canSend}>
-            Send
-          </button>
-          <button onClick={() => void interrupt()} disabled={!isConnected}>
-            Interrupt
-          </button>
-        </div>
-
-        {error ? <div className="error-box">{error}</div> : null}
-
-        <div className="log-panel">
-          <h2>Events</h2>
-          <ul>
-            {logs.map((entry) => (
-              <li key={entry.id}>{entry.message}</li>
-            ))}
-          </ul>
-        </div>
+        {error && <div className="error-toast">{error}</div>}
       </div>
 
-      <div className="stage">
-        <div ref={videoContainerRef} className="video-frame" />
+      {/* Chat panel */}
+      <div className="chat-panel">
+        <div className="chat-header">Chat</div>
+
+        <div className="chat-messages">
+          {messages.length === 0 && (
+            <div className="chat-empty">
+              {isConnected ? 'Say something to start the conversation...' : 'Start a call to begin chatting'}
+            </div>
+          )}
+          {messages.map((msg) => (
+            <div key={msg.id} className={`chat-bubble ${msg.role}`}>
+              <span className="chat-role">{msg.role === 'user' ? 'You' : 'AI'}</span>
+              <p>{msg.text}</p>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="chat-input-row">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={isConnected ? 'Type a message...' : 'Start a call first'}
+            disabled={!isConnected}
+            onKeyDown={(e) => { if (e.key === 'Enter') void sendText(); }}
+          />
+          <button onClick={() => void sendText()} disabled={!canSend}>
+            {isSending ? '...' : 'Send'}
+          </button>
+        </div>
       </div>
     </div>
   );
