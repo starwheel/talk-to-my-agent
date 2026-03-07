@@ -22,6 +22,7 @@ type ChatMessage = {
   id: number;
   role: 'user' | 'ai';
   text: string;
+  attachmentName?: string;
 };
 
 type SummaryData = {
@@ -39,6 +40,25 @@ function buildChatPayload(messageId: string, text: string, idx = 0, fin = true) 
     fin,
     pld: { text },
   };
+}
+
+function chunkTextByBytes(text: string, maxBytes: number): string[] {
+  const encoder = new TextEncoder();
+  const chunks: string[] = [];
+  let current = '';
+
+  for (const char of text) {
+    const next = current + char;
+    if (encoder.encode(next).length > maxBytes) {
+      if (current) chunks.push(current);
+      current = char;
+    } else {
+      current = next;
+    }
+  }
+
+  if (current) chunks.push(current);
+  return chunks.length > 0 ? chunks : [''];
 }
 
 function buildCommandPayload(command: string, data?: Record<string, unknown>) {
@@ -69,6 +89,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [showSummary, setShowSummary] = useState(false);
 
@@ -78,11 +99,15 @@ export default function App() {
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const sessionStartRef = useRef<number>(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const canSend = useMemo(() => isConnected && text.trim().length > 0 && !isSending, [isConnected, text, isSending]);
+  const canSend = useMemo(
+    () => isConnected && text.trim().length > 0 && !isSending && !isUploading,
+    [isConnected, text, isSending, isUploading],
+  );
 
-  const addMessage = (role: 'user' | 'ai', msg: string) => {
-    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), role, text: msg }]);
+  const addMessage = (role: 'user' | 'ai', msg: string, attachmentName?: string) => {
+    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), role, text: msg, attachmentName }]);
   };
 
   useEffect(() => {
@@ -123,6 +148,15 @@ export default function App() {
     await client.sendStreamMessage(JSON.stringify(payload), false);
   };
 
+  const sendChatMessage = async (text: string) => {
+    const messageId = `msg-${Date.now()}`;
+    const chunks = chunkTextByBytes(text, 800);
+
+    for (let i = 0; i < chunks.length; i += 1) {
+      await sendData(buildChatPayload(messageId, chunks[i], i, i === chunks.length - 1));
+    }
+  };
+
   const attachRemoteVideo = (user: IAgoraRTCRemoteUser) => {
     if (!videoContainerRef.current || !user.videoTrack) return;
     videoContainerRef.current.innerHTML = '';
@@ -145,8 +179,9 @@ export default function App() {
 
       const session = (await response.json()) as SessionResponse | { detail?: string };
       if (!response.ok || !('agora' in session)) {
+        const errorDetail = 'detail' in session ? session.detail : undefined;
         throw new Error(
-          typeof session.detail === 'string' ? session.detail : JSON.stringify(session.detail ?? 'Failed to create session'),
+          typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail ?? 'Failed to create session'),
         );
       }
 
@@ -267,12 +302,49 @@ export default function App() {
       const { response_text } = (await resp.json()) as { response_text: string; turn_id: string };
       addMessage('ai', response_text);
 
-      await sendData(buildChatPayload(`msg-${Date.now()}`, response_text));
+      await sendChatMessage(response_text);
     } catch (sendError) {
       const message = sendError instanceof Error ? sendError.message : 'Unknown send error';
       setError(message);
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const uploadDeck = async (file: File) => {
+    if (!isConnected) {
+      setError('Start a call before uploading a deck.');
+      return;
+    }
+
+    setError(null);
+    setIsUploading(true);
+    addMessage('user', `Uploaded a pitch deck: ${file.name}`, file.name);
+
+    try {
+      const formData = new FormData();
+      formData.append('user_id', 'default');
+      formData.append('file', file);
+
+      const resp = await fetch(`${API_BASE}/api/conversation/deck`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({ detail: 'Backend error' }));
+        throw new Error(typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail));
+      }
+
+      const { response_text } = (await resp.json()) as { response_text: string; turn_id: string };
+      addMessage('ai', response_text);
+      await sendChatMessage(response_text);
+    } catch (uploadError) {
+      const message = uploadError instanceof Error ? uploadError.message : 'Unknown upload error';
+      setError(message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -318,12 +390,13 @@ export default function App() {
         <div className="chat-messages">
           {messages.length === 0 && (
             <div className="chat-empty">
-              {isConnected ? 'Say something to start the conversation...' : 'Start a call to begin chatting'}
+              {isConnected ? 'Upload a deck or ask a question to start the conversation...' : 'Start a call to begin chatting'}
             </div>
           )}
           {messages.map((msg) => (
             <div key={msg.id} className={`chat-bubble ${msg.role}`}>
               <span className="chat-role">{msg.role === 'user' ? 'You' : 'AI'}</span>
+              {msg.attachmentName && <div className="chat-attachment">{msg.attachmentName}</div>}
               <p>{msg.text}</p>
             </div>
           ))}
@@ -332,10 +405,28 @@ export default function App() {
 
         <div className="chat-input-row">
           <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            className="sr-only"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void uploadDeck(file);
+            }}
+          />
+          <button
+            className="attach-button"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!isConnected || isUploading || isSending}
+          >
+            {isUploading ? 'Uploading...' : 'Add deck'}
+          </button>
+          <input
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={isConnected ? 'Type a message...' : 'Start a call first'}
-            disabled={!isConnected}
+            disabled={!isConnected || isUploading}
             onKeyDown={(e) => { if (e.key === 'Enter') void sendText(); }}
           />
           <button onClick={() => void sendText()} disabled={!canSend}>

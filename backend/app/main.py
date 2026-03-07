@@ -10,7 +10,7 @@ import uuid
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
@@ -27,6 +27,11 @@ from . import akool_service, llm_service, conversation, database
 
 logger = logging.getLogger("avatar-backend")
 logging.basicConfig(level=logging.INFO)
+
+INVESTOR_SYSTEM_PROMPT = (
+    "You are acting like an early-stage venture investor discussing an uploaded pitch deck. "
+    "Ask incisive follow-up questions, challenge weak assumptions, and keep replies concise and conversational."
+)
 
 
 # --- Connected WebSocket clients ---
@@ -205,10 +210,17 @@ async def conversation_reply(req: ConversationRequest):
     # Use provided history or fall back to server-side memory
     history = req.history if req.history else conversation.get_history(req.user_id)
 
+    context = conversation.get_context(req.user_id)
+    system_prompt = INVESTOR_SYSTEM_PROMPT if context else (
+        "You are a helpful video-call assistant. Keep replies concise and conversational (1-3 sentences)."
+    )
+
     try:
         response_text = await llm_service.get_reply(
             transcript=req.transcript,
             history=history,
+            context=context,
+            system_prompt=system_prompt,
         )
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
@@ -219,6 +231,47 @@ async def conversation_reply(req: ConversationRequest):
     conversation.add_message(req.user_id, "assistant", response_text)
 
     return ConversationResponse(response_text=response_text, turn_id=turn_id)
+
+
+@app.post("/api/conversation/deck", response_model=ConversationResponse)
+async def conversation_deck_upload(
+    user_id: str = Form("default"),
+    file: UploadFile = File(...),
+):
+    """Receive a deck file, analyze it, and prime conversation context."""
+    mime_type = file.content_type or "application/octet-stream"
+    if mime_type != "application/pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported file type. Upload a PDF deck.",
+        )
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+    if len(file_bytes) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="The uploaded file is too large. Max size is 20 MB.")
+
+    try:
+        response_text = await llm_service.analyze_deck(
+            file_name=file.filename or "deck",
+            mime_type=mime_type,
+            file_bytes=file_bytes,
+        )
+    except Exception as e:
+        logger.error(f"Deck analysis failed: {e}")
+        raise HTTPException(status_code=502, detail=f"Deck analysis error: {e}")
+
+    deck_context = (
+        f"An uploaded pitch deck named '{file.filename or 'deck'}' has been analyzed. "
+        f"Use this prior analysis as context for future investor-style questions and answers:\n\n"
+        f"{response_text}"
+    )
+    conversation.set_context(user_id, deck_context)
+    conversation.add_message(user_id, "user", f"[Uploaded deck: {file.filename or 'deck'}]")
+    conversation.add_message(user_id, "assistant", response_text)
+
+    return ConversationResponse(response_text=response_text, turn_id=uuid.uuid4().hex[:8])
 
 
 @app.delete("/api/conversation/{user_id}")
@@ -268,9 +321,16 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
                 # Get LLM reply
                 history = conversation.get_history(user_id)
+                context = conversation.get_context(user_id)
+                system_prompt = INVESTOR_SYSTEM_PROMPT if context else (
+                    "You are a helpful video-call assistant. Keep replies concise and conversational (1-3 sentences)."
+                )
                 try:
                     response_text = await llm_service.get_reply(
-                        transcript=text, history=history
+                        transcript=text,
+                        history=history,
+                        context=context,
+                        system_prompt=system_prompt,
                     )
                 except Exception as e:
                     await websocket.send_json(

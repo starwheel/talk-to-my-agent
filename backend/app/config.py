@@ -34,7 +34,11 @@ class Settings(BaseSettings):
     port: int = 8000
     cors_origins: List[str] = ["http://localhost:5173", "http://localhost:5174"]
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
 
 settings = Settings()
