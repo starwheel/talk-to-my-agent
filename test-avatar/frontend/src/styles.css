@@ -239,17 +239,26 @@ input {
 }
 
 .attach-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 0;
   background: rgba(255, 255, 255, 0.06);
   color: #e8e8e8;
-  font-weight: 600;
-  white-space: nowrap;
+  flex: 0 0 auto;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .attach-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
+}
+
+.attach-button svg {
+  opacity: 0.92;
 }
 
 .chat-input-row input {

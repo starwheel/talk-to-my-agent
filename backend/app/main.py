@@ -9,6 +9,7 @@ Responsibilities:
 import uuid
 import logging
 from contextlib import asynccontextmanager
+from typing import Dict, List, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -55,9 +56,14 @@ Conversation goal:
 - If a pitch is compelling, say so briefly and move to the next investment-critical question.
 
 Opening behavior:
-- On the first assistant turn of a conversation, open with a line in this style:
-  "I'm Kevin's agent. What's the problem you're solving? You've got 60 seconds. Go."
+- On the first assistant turn of a conversation, say exactly:
+  "I'm Kevin's Agent. You're in the Tank -- 60 seconds, what do you do?"
 - Do not repeat the opening after the first turn.
+
+Preferred early flow:
+- If the founder gives a company description, the next investment-critical question should usually be:
+  "How big is this market and who's paying for it today?"
+- After that, continue the screening with the highest-priority unresolved issue.
 
 Close behavior:
 - If the founder gives a strong, credible summary covering the key investment points, close in this style:
@@ -70,10 +76,31 @@ Style constraints:
 - Do not output bullet lists unless the user explicitly asks for them.
 """.strip()
 
+FIRST_TURN_OPENING = "I'm Kevin's Agent. You're in the Tank -- 60 seconds, what do you do?"
 
-# --- Connected WebSocket clients ---
-from typing import Dict
+
 _ws_clients: Dict[str, WebSocket] = {}
+
+
+def _is_first_assistant_turn(history: List) -> bool:
+    return not any(message.role == "assistant" for message in history)
+
+
+async def _generate_investor_reply(
+    *,
+    transcript: str,
+    history: List,
+    context: Optional[str],
+) -> str:
+    if _is_first_assistant_turn(history):
+        return FIRST_TURN_OPENING
+
+    return await llm_service.get_reply(
+        transcript=transcript,
+        history=history,
+        context=context,
+        system_prompt=INVESTOR_SYSTEM_PROMPT,
+    )
 
 
 @asynccontextmanager
@@ -248,14 +275,12 @@ async def conversation_reply(req: ConversationRequest):
     history = req.history if req.history else conversation.get_history(req.user_id)
 
     context = conversation.get_context(req.user_id)
-    system_prompt = INVESTOR_SYSTEM_PROMPT
 
     try:
-        response_text = await llm_service.get_reply(
+        response_text = await _generate_investor_reply(
             transcript=req.transcript,
             history=history,
             context=context,
-            system_prompt=system_prompt,
         )
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
@@ -357,13 +382,11 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 # Get LLM reply
                 history = conversation.get_history(user_id)
                 context = conversation.get_context(user_id)
-                system_prompt = INVESTOR_SYSTEM_PROMPT
                 try:
-                    response_text = await llm_service.get_reply(
+                    response_text = await _generate_investor_reply(
                         transcript=text,
                         history=history,
                         context=context,
-                        system_prompt=system_prompt,
                     )
                 except Exception as e:
                     await websocket.send_json(

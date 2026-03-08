@@ -4,6 +4,7 @@ import AgoraRTC, {
   type IAgoraRTCRemoteUser,
   type IMicrophoneAudioTrack,
 } from 'agora-rtc-sdk-ng';
+import { Paperclip } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
 const VOICE_ID = 'hae0UoGzmG25-6LDrB39Q';
@@ -419,8 +420,11 @@ export default function App() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={!isConnected || isUploading || isSending}
+            aria-label={isUploading ? 'Uploading deck' : 'Attach deck'}
+            title={isUploading ? 'Uploading deck' : 'Attach deck'}
           >
-            {isUploading ? 'Uploading...' : 'Add deck'}
+            <Paperclip size={18} strokeWidth={1.9} aria-hidden="true" />
+            <span className="sr-only">{isUploading ? 'Uploading deck' : 'Attach deck'}</span>
           </button>
           <input
             value={text}
