@@ -1,4 +1,4 @@
-const PITCH_URL = 'http://localhost:5174/';
+const PITCH_URL = 'https://talk-to-my-agent-client.vercel.app/';
 
 const toAbsoluteOLearyUrl = (value) => {
   if (!value) return value;
