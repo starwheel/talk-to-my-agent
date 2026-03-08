@@ -2,6 +2,8 @@
 
 **The AI gatekeeper for venture capital.** Every VC is drowning in cold pitches — thousands of emails a week. We give VCs an AI twin that lives on their website, grills every founder, scores their pitch, and hands the VC a ranked dashboard of the best deals. A 24/7 partner that never sleeps.
 
+![Landing Page](webapp-images/landingpage.png)
+
 ---
 
 ## ✨ What It Does
@@ -42,6 +44,8 @@ Founders visit a VC's website and are greeted by their **AI screening agent** �
 ### 🟢 One-Click Video Calls
 Founders click **Start Call** and they're instantly connected to a high-definition AI avatar. No scheduling, no forms — just pitch.
 
+![Video Chat with Kevin](webapp-images/video%20chat%20with%20kevin.jpeg)
+
 ### 🎙️ Voice + Text
 Speak naturally through the microphone or type in the chat panel. The avatar responds to both with lip-synced video.
 
@@ -64,6 +68,8 @@ Founders upload their deck (PDF) and get instant investor-grade feedback:
 Just like a real conversation — interrupt the avatar mid-sentence and redirect.
 
 ### 📝 Call Summaries
+![Call Summary](webapp-images/after%20video%20chat%20summary.jpeg)
+
 When the call ends, the AI generates a concise summary:
 - Key topics discussed
 - Message count and call duration
@@ -72,6 +78,8 @@ When the call ends, the AI generates a concise summary:
 
 ### 💾 Automatic Transcript Storage
 Every conversation — full transcript, AI summary, pitch deck analysis — is saved to a secure database. VCs can review past screenings anytime.
+
+![VC Dashboard](webapp-images/dashboard.jpeg)
 
 ---
 
